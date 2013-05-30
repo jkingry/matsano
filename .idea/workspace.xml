@@ -7,7 +7,7 @@
     <file path="/main.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369932818698" ignored="false" />
     <file path="/question1_test.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369936047401" ignored="false" />
     <file path="/package1_test.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369938978433" ignored="false" />
-    <file path="/package1.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369939148442" ignored="false" />
+    <file path="/package1.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369940688084" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,7 +83,7 @@
       <file leaf-file-name="package1.go" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/package1/package1.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="4" selection-start="428" selection-end="428" vertical-scroll-proportion="0.49591598">
+            <state line="53" column="20" selection-start="810" selection-end="810" vertical-scroll-proportion="0.88098013">
               <folding />
             </state>
           </provider>
@@ -455,7 +455,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/package1/package1.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="4" selection-start="428" selection-end="428" vertical-scroll-proportion="0.49591598">
+        <state line="53" column="20" selection-start="810" selection-end="810" vertical-scroll-proportion="0.88098013">
           <folding />
         </state>
       </provider>

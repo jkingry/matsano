@@ -33,6 +33,21 @@ func Base64EncodeToString(src []byte) string {
 
 // 2. Fixed XOR
 
+func min(a, b int) int {
+	if a > b {
+		return a
+	}
+
+	return b
+}
+
 func FixedXOR(a, b []byte) []byte {
-	return make([]byte, 0)
+	result_size := min(len(a), len(b))
+	result := make([]byte, result_size)
+
+	for i := 0; i < result_size; i++ {
+		result[i] = a[i] ^ b[i]
+	}
+
+	return result
 }
