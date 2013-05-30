@@ -7,7 +7,7 @@ import "encoding/base64"
 
 func HexDecodeString(s string) []byte {
 	d, err := hex.DecodeString(s)
-	if (err != nil) {
+	if err != nil {
 		panic(err)
 	}
 
@@ -20,7 +20,7 @@ func HexEncodeToString(src []byte) string {
 
 func Base64DecodeString(s string) []byte {
 	d, err := base64.StdEncoding.DecodeString(s)
-	if (err != nil) {
+	if err != nil {
 		panic(err)
 	}
 
