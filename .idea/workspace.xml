@@ -4,10 +4,10 @@
     <list default="true" id="683304ac-1f6b-4f4d-9806-27cf3d76ec69" name="Default" comment="" />
     <ignored path="matsano.iws" />
     <ignored path=".idea/workspace.xml" />
-    <file path="/main.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369932818698" ignored="false" />
+    <file path="/main.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369942062545" ignored="false" />
     <file path="/question1_test.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369936047401" ignored="false" />
     <file path="/package1_test.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369938978433" ignored="false" />
-    <file path="/package1.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369940688084" ignored="false" />
+    <file path="/package1.go" changelist="683304ac-1f6b-4f4d-9806-27cf3d76ec69" time="1369941690483" ignored="false" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,19 +71,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="main.go" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="main.go" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="36" column="60" selection-start="817" selection-end="856" vertical-scroll-proportion="0.0">
+            <state line="33" column="99" selection-start="771" selection-end="771" vertical-scroll-proportion="0.6546091">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="package1.go" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="package1.go" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/package1/package1.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="53" column="20" selection-start="810" selection-end="810" vertical-scroll-proportion="0.88098013">
+            <state line="68" column="16" selection-start="1081" selection-end="1081" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -108,10 +108,10 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/main.go" />
         <option value="$PROJECT_DIR$/question1_test.go" />
         <option value="$PROJECT_DIR$/package1/package1_test.go" />
         <option value="$PROJECT_DIR$/package1/package1.go" />
+        <option value="$PROJECT_DIR$/main.go" />
       </list>
     </option>
   </component>
@@ -439,13 +439,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="60" selection-start="817" selection-end="856" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/package1/package1_test.go">
       <provider selected="true" editor-type-id="text-editor">
         <state line="32" column="27" selection-start="1215" selection-end="1215" vertical-scroll-proportion="0.0">
@@ -455,7 +448,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/package1/package1.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="53" column="20" selection-start="810" selection-end="810" vertical-scroll-proportion="0.88098013">
+        <state line="68" column="16" selection-start="1081" selection-end="1081" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="33" column="99" selection-start="771" selection-end="771" vertical-scroll-proportion="0.6546091">
           <folding />
         </state>
       </provider>

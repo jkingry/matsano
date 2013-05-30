@@ -11,6 +11,8 @@ import "fmt"
 import "flag"
 import "encoding/hex"
 import "encoding/base64"
+import "bitbucket.com/jkingry/matsano/package1"
+
 
 func main() {
 	inputEncoding := flag.String("i", "hex", "input encoding (hex, b64)")
@@ -23,9 +25,9 @@ func main() {
 
 	switch(*inputEncoding) {
 	case "hex":
-		data,_ = hex.DecodeString(textInput)
+		data = package1.HexDecodeString(textInput)
 	case "b64":
-		data,_ = base64.StdEncoding.DecodeString(textInput)
+		data,_ = package1.Base64StdEncoding.DecodeString(textInput)
 	default:
 		panic(fmt.Sprintf("invalid input format: %v", *inputEncoding))
 	}

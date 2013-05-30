@@ -51,3 +51,21 @@ func FixedXOR(a, b []byte) []byte {
 
 	return result
 }
+
+// 3. Single-character XOR Cipher
+func singleXOR(key byte, in []byte) string {
+	result := make([]byte, len(in))
+	for i, v := range in {
+		result[i] = v ^ key
+	}
+
+	return string(result)
+}
+
+func DecryptXORCypher(in []byte) (string, byte) {
+	for i := 0; i < 255; i++ {
+
+	}
+
+	return "", 0
+}
