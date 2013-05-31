@@ -9,38 +9,55 @@ package main
 
 import "fmt"
 import "flag"
-import "encoding/hex"
-import "encoding/base64"
-import "bitbucket.com/jkingry/matsano/package1"
+import "bitbucket.org/jkingry/matsano/package1"
 
 
 func main() {
-	inputEncoding := flag.String("i", "hex", "input encoding (hex, b64)")
-	outputEncoding := flag.String("o", "b64", "output encoding (hex, b64)")
+	inputEncoding := flag.String("i", "", "input encoding (hex, b64)")
+	outputEncoding := flag.String("o", "", "output encoding (hex, b64)")
+	ioEncoding := flag.String("io", "hex", "input/output encoding")
+
+	fixedXor := flag.Bool("fixedXor", false, "")
+	decryptXor := flag.Bool("decryptXor", false, "")
+
 	flag.Parse()
 
-	textInput := flag.Arg(0)
-	var data []byte
-	var textOutput string
+	var inputEncode func(string)[]byte
+	var outputEncode func([]byte)string
+
+	if (*inputEncoding == "") {
+		*inputEncoding = *ioEncoding
+	}
+	if (*outputEncoding == "") {
+		*outputEncoding = *ioEncoding
+	}
 
 	switch(*inputEncoding) {
 	case "hex":
-		data = package1.HexDecodeString(textInput)
+		inputEncode = package1.HexDecodeString
 	case "b64":
-		data,_ = package1.Base64StdEncoding.DecodeString(textInput)
+		inputEncode = package1.Base64DecodeString
 	default:
-		panic(fmt.Sprintf("invalid input format: %v", *inputEncoding))
+		inputEncode = func(s string)[]byte { return []byte(s) }
 	}
 
 	switch(*outputEncoding) {
 	case "hex":
-		textOutput = hex.EncodeToString(data)
+		outputEncode = package1.HexEncodeToString
 	case "b64":
-		textOutput = base64.StdEncoding.EncodeToString(data)
+		outputEncode = package1.Base64EncodeToString
 	default:
-		panic(fmt.Sprintf("invalid output format: %v", *outputEncoding))
+		outputEncode = func(d []byte)string { return string(d) }
 	}
 
-	fmt.Println(textOutput)
+	switch {
+	case *fixedXor:
+		fmt.Println(outputEncode(package1.FixedXOR(inputEncode(flag.Arg(0)), inputEncode(flag.Arg(1)))))
+	case *decryptXor:
+		result, key := package1.DecryptXORCypher(inputEncode(flag.Arg(0)))
+		fmt.Printf("Key: %v, Decoded: \"%v\"", key, string(result))
+	default:
+		fmt.Println(outputEncode(inputEncode(flag.Arg(0))))
+	}
 }
 

@@ -1,5 +1,7 @@
 package package1
 
+import "bufio"
+import "os"
 import "encoding/hex"
 import "encoding/base64"
 
@@ -34,7 +36,7 @@ func Base64EncodeToString(src []byte) string {
 // 2. Fixed XOR
 
 func min(a, b int) int {
-	if a > b {
+	if a < b {
 		return a
 	}
 
@@ -53,19 +55,66 @@ func FixedXOR(a, b []byte) []byte {
 }
 
 // 3. Single-character XOR Cipher
-func singleXOR(key byte, in []byte) string {
+
+func singleXOR(key byte, in []byte) []byte {
 	result := make([]byte, len(in))
 	for i, v := range in {
 		result[i] = v ^ key
 	}
 
-	return string(result)
+	return result
 }
 
-func DecryptXORCypher(in []byte) (string, byte) {
-	for i := 0; i < 255; i++ {
-
+func scoreXor(in []byte) int {
+	score := 0
+	for _, v := range in {
+		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v <'z') {
+			score += 1
+		}
 	}
 
-	return "", 0
+	return score
+}
+
+func DecryptXORCypher(in []byte) (result []byte, key byte) {
+	maxScore := 0
+
+	for i := byte(0); i < 255; i++ {
+		r := singleXOR(i, in)
+		s := scoreXor(r)
+		if s > maxScore {
+			key = i
+			maxScore = s
+			result = r
+		}
+	}
+
+	return
+}
+
+// 4. Detect single-character XOR
+
+func max
+
+func DecryptXORLines(path string) (result string, key byte) {
+	var file *os.File
+	var err error
+
+	if file, err = os.Open(path); err != nil {
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		r, k := DecryptXORCypher(HexDecodeString(line))
+		s := scoreXor(r)
+
+		fmt.Println(scanner.Text()) // Println will add back the final '\n'
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
+}
 }

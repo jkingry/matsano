@@ -12,6 +12,7 @@ func Test_Question1_HexToBase64(t *testing.T) {
 	}
 }
 
+
 func Test_Question1_Base64ToHex(t *testing.T) {
 	const in, out = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t", "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
 
@@ -28,5 +29,17 @@ func Test_Question2_fixedXOR(t *testing.T) {
 
 	if HexEncodeToString(x) != out {
 		t.Errorf("FixedXOR(%v, %v) = %v, want %v", in_a, in_b, x, out)
+	}
+}
+
+// 3. Single-character XOR Cipher
+
+func Test_Question3_DecryptXORCypher(t *testing.T) {
+	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
+
+	x_result, x_key := DecryptXORCypher(HexDecodeString(in))
+
+	if string(x_result) != out_result || x_key != out_key {
+		t.Errorf("DecryptXORCypher = %v, %v want %v, %v", string(x_result), x_key, out_result, out_key)
 	}
 }
