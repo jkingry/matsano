@@ -11,7 +11,6 @@ import "fmt"
 import "flag"
 import "bitbucket.org/jkingry/matsano/package1"
 
-
 func main() {
 	inputEncoding := flag.String("i", "", "input encoding (hex, b64)")
 	outputEncoding := flag.String("o", "", "output encoding (hex, b64)")
@@ -22,32 +21,32 @@ func main() {
 
 	flag.Parse()
 
-	var inputEncode func(string)[]byte
-	var outputEncode func([]byte)string
+	var inputEncode func(string) []byte
+	var outputEncode func([]byte) string
 
-	if (*inputEncoding == "") {
+	if *inputEncoding == "" {
 		*inputEncoding = *ioEncoding
 	}
-	if (*outputEncoding == "") {
+	if *outputEncoding == "" {
 		*outputEncoding = *ioEncoding
 	}
 
-	switch(*inputEncoding) {
+	switch *inputEncoding {
 	case "hex":
 		inputEncode = package1.HexDecodeString
 	case "b64":
 		inputEncode = package1.Base64DecodeString
 	default:
-		inputEncode = func(s string)[]byte { return []byte(s) }
+		inputEncode = func(s string) []byte { return []byte(s) }
 	}
 
-	switch(*outputEncoding) {
+	switch *outputEncoding {
 	case "hex":
 		outputEncode = package1.HexEncodeToString
 	case "b64":
 		outputEncode = package1.Base64EncodeToString
 	default:
-		outputEncode = func(d []byte)string { return string(d) }
+		outputEncode = func(d []byte) string { return string(d) }
 	}
 
 	switch {
@@ -60,4 +59,3 @@ func main() {
 		fmt.Println(outputEncode(inputEncode(flag.Arg(0))))
 	}
 }
-

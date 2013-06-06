@@ -18,7 +18,7 @@ func MaxChannel(in chan Scorable) Scorable {
 	for v := range in {
 		s := v.Score()
 		if s > maxScore {
-		   	maxScore = s
+			maxScore = s
 			maxValue = v
 		}
 	}
@@ -29,7 +29,7 @@ func MaxChannel(in chan Scorable) Scorable {
 func MaxArray(in []Scorable) Scorable {
 	maxScore := 0
 	var maxValue Scorable
-	for _,v := range in {
+	for _, v := range in {
 		s := v.Score()
 		if s > maxScore {
 			maxScore = s
@@ -39,4 +39,3 @@ func MaxArray(in []Scorable) Scorable {
 
 	return maxValue
 }
-

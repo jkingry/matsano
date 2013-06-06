@@ -59,7 +59,7 @@ func singleXOR(key byte, in []byte) []byte {
 func scoreXor(in []byte) int {
 	score := 0
 	for _, v := range in {
-		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v <'z') {
+		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v < 'z') {
 			score += 1
 		}
 	}
@@ -68,9 +68,10 @@ func scoreXor(in []byte) int {
 }
 
 type XorKey struct {
-	key byte
+	key    byte
 	target []byte
 }
+
 func (k XorKey) Score() int {
 	r := singleXOR(k.key, k.target)
 	return scoreXor(r)
@@ -80,7 +81,7 @@ func DecryptXORCypher(in []byte) (result []byte, key byte) {
 	var keys []util.Scorable = make([]util.Scorable, 256)
 
 	for i := 0; i < len(keys); i++ {
-		keys[i] = XorKey{ byte(i), in }
+		keys[i] = XorKey{byte(i), in}
 	}
 
 	m := util.MaxArray(keys).(XorKey)
