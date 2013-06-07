@@ -38,7 +38,6 @@ func Test_Question3_DecryptXORCypher(t *testing.T) {
 
 	x := DecryptXORCypher(HexDecodeString(in))
 
-
 	if string(x.result) != out_result || x.key != out_key {
 		t.Errorf("DecryptXORCypher = %v, %v want %v, %v", string(x.result), x.key, out_result, out_key)
 	}

@@ -2,10 +2,12 @@ package package1
 
 import "encoding/hex"
 import "encoding/base64"
-import "bitbucket.org/jkingry/matsano/util"
 import "bufio"
 import "os"
 import "strings"
+import "bitbucket.org/jkingry/matsano/util"
+import "flag"
+import "fmt"
 
 // 1. Convert hex to base64 and back.
 
@@ -59,7 +61,7 @@ func singleXOR(key byte, in []byte) []byte {
 	return result
 }
 
-func scoreXor(in []byte) int {
+func score(in []byte) int {
 	score := 0
 	for _, v := range in {
 		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v < 'z') || v == ' ' {
@@ -71,30 +73,30 @@ func scoreXor(in []byte) int {
 }
 
 type XorDecrypt struct {
-	result []byte
-	key    byte
+	Result []byte
+	Key    byte
 }
 
 func (x *XorDecrypt) Score() int {
-	return scoreXor(x.result)
+	return score(x.Result)
 }
 
-func DecryptXORCypher(in []byte) *XorDecrypt {
+func DecryptSingleXOR(in []byte) *XorDecrypt {
 	keys := make(chan util.Scorable)
 	result := util.MaxChannel(keys)
 	for i := 0; i < 256; i++ {
 		key := byte(i)
-		keys <- &XorDecrypt{ singleXOR(key, in), key }
+		keys <- &XorDecrypt{singleXOR(key, in), key}
 	}
 	close(keys)
 
-	return (<-result).(*XorDecrypt);
+	return (<-result).(*XorDecrypt)
 }
 
 // 4. Detect single-character XOR
 
-func DetectXORLine(path string) string {
-	file, err  := os.Open(path)
+func DetectSingleXORLine(path string) string {
+	file, err := os.Open(path)
 	if err != nil {
 		return ""
 	}
@@ -107,13 +109,63 @@ func DetectXORLine(path string) string {
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		data :=  HexDecodeString(line)
-		lines <- DecryptXORCypher(data)
+		data := HexDecodeString(line)
+		lines <- DecryptSingleXOR(data)
 	}
 
 	close(lines)
 
 	r := (<-found).(*XorDecrypt)
 
-	return string(r.result)
+	return string(r.Result)
+}
+
+func CommandLine(args []string) {
+	flags := flag.NewFlagSet("pkg1", flag.ContinueOnError)
+
+	decodeName := flags.String("i", "hex", "input encoding (hex, b64)")
+	encodeName := flags.String("o", "hex", "output encoding (hex, b64)")
+	codeName := flags.String("io", "hex", "input/output encoding")
+	fixedXor := flags.Bool("fixedXor", false, "")
+	decryptSingleXor := flags.Bool("decryptSingleXor", false, "")
+	detectSingleXorLine := flags.Bool("detectSingleXorLine", false, "")
+
+	decoders := map[string]func(string) []byte{
+		"hex":    HexDecodeString,
+		"b64":    Base64DecodeString,
+		"base64": Base64DecodeString,
+		"ascii":  func(s string) []byte { return []byte(s) },
+	}
+
+	encoders := map[string]func([]byte) string{
+		"hex":    HexEncodeToString,
+		"b64":    Base64EncodeToString,
+		"base64": Base64EncodeToString,
+		"ascii":  func(b []byte) string { return string(b) },
+	}
+
+	flags.Parse(args)
+
+	if *decodeName == "" {
+		*decodeName = *codeName
+	}
+	if *encodeName == "" {
+		*encodeName = *codeName
+	}
+
+	decoder := decoders[*decodeName]
+	encoder := encoders[*encodeName]
+
+	switch {
+	case *fixedXor:
+		fmt.Println(encoder(FixedXOR(decoder(flags.Arg(0)), decoder(flags.Arg(1)))))
+	case *decryptSingleXor:
+		result := DecryptSingleXOR(decoder(flags.Arg(0)))
+		fmt.Printf("Key: %v, Decoded: \"%v\"", result.Key, string(result.Result))
+	case *detectSingleXorLine:
+		result := DetectSingleXORLine(flags.Arg(0))
+		fmt.Printf("Line: \"%v\"", result)
+	default:
+		fmt.Println(encoder(decoder(flags.Arg(0))))
+	}
 }
