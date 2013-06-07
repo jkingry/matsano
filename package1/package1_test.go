@@ -36,9 +36,22 @@ func Test_Question2_fixedXOR(t *testing.T) {
 func Test_Question3_DecryptXORCypher(t *testing.T) {
 	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
 
-	x_result, x_key := DecryptXORCypher(HexDecodeString(in))
+	x := DecryptXORCypher(HexDecodeString(in))
 
-	if string(x_result) != out_result || x_key != out_key {
-		t.Errorf("DecryptXORCypher = %v, %v want %v, %v", string(x_result), x_key, out_result, out_key)
+
+	if string(x.result) != out_result || x.key != out_key {
+		t.Errorf("DecryptXORCypher = %v, %v want %v, %v", string(x.result), x.key, out_result, out_key)
+	}
+}
+
+// 4. Detect single-character XOR
+
+func Test_Question4_DetectXORCypher(t *testing.T) {
+	const in, out = "gistfile1.txt", "Now that the party is jumping\n"
+
+	x := DetectXORLine(in)
+
+	if x != out {
+		t.Errorf("DetectXORLine(%v) = '%v' want '%v'", in, x, out)
 	}
 }

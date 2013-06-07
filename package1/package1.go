@@ -3,6 +3,9 @@ package package1
 import "encoding/hex"
 import "encoding/base64"
 import "bitbucket.org/jkingry/matsano/util"
+import "bufio"
+import "os"
+import "strings"
 
 // 1. Convert hex to base64 and back.
 
@@ -59,7 +62,7 @@ func singleXOR(key byte, in []byte) []byte {
 func scoreXor(in []byte) int {
 	score := 0
 	for _, v := range in {
-		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v < 'z') {
+		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v < 'z') || v == ' ' {
 			score += 1
 		}
 	}
@@ -67,26 +70,50 @@ func scoreXor(in []byte) int {
 	return score
 }
 
-type XorKey struct {
+type XorDecrypt struct {
+	result []byte
 	key    byte
-	target []byte
 }
 
-func (k XorKey) Score() int {
-	r := singleXOR(k.key, k.target)
-	return scoreXor(r)
+func (x *XorDecrypt) Score() int {
+	return scoreXor(x.result)
 }
 
-func DecryptXORCypher(in []byte) (result []byte, key byte) {
-	var keys []util.Scorable = make([]util.Scorable, 256)
-
-	for i := 0; i < len(keys); i++ {
-		keys[i] = XorKey{byte(i), in}
+func DecryptXORCypher(in []byte) *XorDecrypt {
+	keys := make(chan util.Scorable)
+	result := util.MaxChannel(keys)
+	for i := 0; i < 256; i++ {
+		key := byte(i)
+		keys <- &XorDecrypt{ singleXOR(key, in), key }
 	}
+	close(keys)
 
-	m := util.MaxArray(keys).(XorKey)
-
-	return singleXOR(m.key, in), m.key
+	return (<-result).(*XorDecrypt);
 }
 
 // 4. Detect single-character XOR
+
+func DetectXORLine(path string) string {
+	file, err  := os.Open(path)
+	if err != nil {
+		return ""
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lines := make(chan util.Scorable)
+	found := util.MaxChannel(lines)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		data :=  HexDecodeString(line)
+		lines <- DecryptXORCypher(data)
+	}
+
+	close(lines)
+
+	r := (<-found).(*XorDecrypt)
+
+	return string(r.result)
+}
