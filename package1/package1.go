@@ -6,8 +6,8 @@ import "bufio"
 import "os"
 import "strings"
 import "bitbucket.org/jkingry/matsano/util"
-import "flag"
 import "fmt"
+import "bitbucket.org/jkingry/matsano/cmd"
 
 // 1. Convert hex to base64 and back.
 
@@ -37,9 +37,9 @@ func Base64EncodeToString(src []byte) string {
 	return base64.StdEncoding.EncodeToString(src)
 }
 
-// 2. Fixed XOR
+// 2. Fixed Xor
 
-func FixedXOR(a, b []byte) []byte {
+func FixedXor(a, b []byte) []byte {
 	result_size := util.MinInt(len(a), len(b))
 	result := make([]byte, result_size)
 
@@ -50,9 +50,9 @@ func FixedXOR(a, b []byte) []byte {
 	return result
 }
 
-// 3. Single-character XOR Cipher
+// 3. Single-character Xor Cipher
 
-func singleXOR(key byte, in []byte) []byte {
+func singleXor(key byte, in []byte) []byte {
 	result := make([]byte, len(in))
 	for i, v := range in {
 		result[i] = v ^ key
@@ -81,21 +81,21 @@ func (x *XorDecrypt) Score() int {
 	return score(x.Result)
 }
 
-func DecryptSingleXOR(in []byte) *XorDecrypt {
+func DecryptSingleXor(in []byte) *XorDecrypt {
 	keys := make(chan util.Scorable)
 	result := util.MaxChannel(keys)
 	for i := 0; i < 256; i++ {
 		key := byte(i)
-		keys <- &XorDecrypt{singleXOR(key, in), key}
+		keys <- &XorDecrypt{singleXor(key, in), key}
 	}
 	close(keys)
 
 	return (<-result).(*XorDecrypt)
 }
 
-// 4. Detect single-character XOR
+// 4. Detect single-character Xor
 
-func DetectSingleXORLine(path string) string {
+func DetectSingleXorLine(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
 		return ""
@@ -110,7 +110,7 @@ func DetectSingleXORLine(path string) string {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		data := HexDecodeString(line)
-		lines <- DecryptSingleXOR(data)
+		lines <- DecryptSingleXor(data)
 	}
 
 	close(lines)
@@ -120,52 +120,68 @@ func DetectSingleXORLine(path string) string {
 	return string(r.Result)
 }
 
-func CommandLine(args []string) {
-	flags := flag.NewFlagSet("pkg1", flag.ContinueOnError)
+// 5. Repeating-key Xor Cipher
 
-	decodeName := flags.String("i", "hex", "input encoding (hex, b64)")
-	encodeName := flags.String("o", "hex", "output encoding (hex, b64)")
-	codeName := flags.String("io", "hex", "input/output encoding")
-	fixedXor := flags.Bool("fixedXor", false, "")
-	decryptSingleXor := flags.Bool("decryptSingleXor", false, "")
-	detectSingleXorLine := flags.Bool("detectSingleXorLine", false, "")
-
-	decoders := map[string]func(string) []byte{
-		"hex":    HexDecodeString,
-		"b64":    Base64DecodeString,
-		"base64": Base64DecodeString,
-		"ascii":  func(s string) []byte { return []byte(s) },
+func RepeatXor(key, source []byte) []byte {
+	output := make([]byte, len(source))
+	for i, v := range source {
+		output[i] = v ^ key[i%len(key)]
 	}
 
-	encoders := map[string]func([]byte) string{
-		"hex":    HexEncodeToString,
-		"b64":    Base64EncodeToString,
-		"base64": Base64EncodeToString,
-		"ascii":  func(b []byte) string { return string(b) },
+	return output
+}
+
+var CommandSet *cmd.CommandSet = cmd.NewCommandSet("p1")
+
+type encoding struct {
+	encode func([]byte) string
+	decode func(string) []byte
+}
+
+func init() {
+	encodings := map[string]encoding{
+		"hex":    {HexEncodeToString, HexDecodeString},
+		"base64": {Base64EncodeToString, Base64DecodeString},
+		"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
 	}
 
-	flags.Parse(args)
-
-	if *decodeName == "" {
-		*decodeName = *codeName
-	}
-	if *encodeName == "" {
-		*encodeName = *codeName
+	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
+		return func(args []string) {
+			data := decode(cmd.GetInput(args))
+			fmt.Print(encode(data))
+		}
 	}
 
-	decoder := decoders[*decodeName]
-	encoder := encoders[*encodeName]
-
-	switch {
-	case *fixedXor:
-		fmt.Println(encoder(FixedXOR(decoder(flags.Arg(0)), decoder(flags.Arg(1)))))
-	case *decryptSingleXor:
-		result := DecryptSingleXOR(decoder(flags.Arg(0)))
-		fmt.Printf("Key: %v, Decoded: \"%v\"", result.Key, string(result.Result))
-	case *detectSingleXorLine:
-		result := DetectSingleXORLine(flags.Arg(0))
-		fmt.Printf("Line: \"%v\"", result)
-	default:
-		fmt.Println(encoder(decoder(flags.Arg(0))))
+	for inputName, inputEncoding := range encodings {
+		translateCommand := cmd.NewCommandSet(inputName)
+		for outputName, outputEncoding := range encodings {
+			translateCommand.Add(cmd.NewCommand(outputName, nil, translate(inputEncoding.decode, outputEncoding.encode)))
+		}
+		CommandSet.Add(translateCommand)
 	}
+
+	CommandSet.Add(cmd.NewCommand("fixedXor", nil, func(args []string) {
+		key := HexDecodeString(args[0])
+		input := HexDecodeString(cmd.GetInput(args[1:]))
+		fmt.Print(HexEncodeToString(FixedXor(key, input)))
+	}))
+
+	CommandSet.Add(cmd.NewCommand("decryptSingleXor", nil, func(args []string) {
+		input := HexDecodeString(cmd.GetInput(args))
+		result := DecryptSingleXor(input)
+
+		fmt.Fprintln(os.Stderr, "Key:", result.Key)
+
+		fmt.Print(string(result.Result))
+	}))
+
+	CommandSet.Add(cmd.NewCommand("detectSingleXorLine", nil, func(args []string) {
+		fmt.Print(DetectSingleXorLine(args[0]))
+	}))
+
+	CommandSet.Add(cmd.NewCommand("xor", nil, func(args []string) {
+		key := HexDecodeString(args[0])
+		input := HexDecodeString(cmd.GetInput(args[1:]))
+		fmt.Print(HexEncodeToString(RepeatXor(key, input)))
+	}))
 }

@@ -1,5 +1,14 @@
 package util
 
+import "flag"
+
+type Command struct {
+	Name     string
+	Flags    *flag.FlagSet
+	Commands []Command
+	Run      func()
+}
+
 func MinInt(a, b int) int {
 	if a < b {
 		return a
