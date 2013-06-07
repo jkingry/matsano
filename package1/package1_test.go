@@ -20,37 +20,37 @@ func Test_Question1_Base64ToHex(t *testing.T) {
 	}
 }
 
-// 2. Fixed XOR
+// 2. Fixed Xor
 
-func Test_Question2_fixedXOR(t *testing.T) {
+func Test_Question2_fixedXor(t *testing.T) {
 	const in_a, in_b, out = "1c0111001f010100061a024b53535009181c", "686974207468652062756c6c277320657965", "746865206b696420646f6e277420706c6179"
-	x := FixedXOR(HexDecodeString(in_a), HexDecodeString(in_b))
+	x := FixedXor(HexDecodeString(in_a), HexDecodeString(in_b))
 
 	if HexEncodeToString(x) != out {
-		t.Errorf("FixedXOR(%v, %v) = %v, want %v", in_a, in_b, x, out)
+		t.Errorf("FixedXor(%v, %v) = %v, want %v", in_a, in_b, x, out)
 	}
 }
 
-// 3. Single-character XOR Cipher
+// 3. Single-character Xor Cipher
 
-func Test_Question3_DecryptXORCypher(t *testing.T) {
+func Test_Question3_DecryptXorCypher(t *testing.T) {
 	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
 
-	x := DecryptXORCypher(HexDecodeString(in))
+	x := DecryptSingleXor(HexDecodeString(in))
 
-	if string(x.result) != out_result || x.key != out_key {
-		t.Errorf("DecryptXORCypher = %v, %v want %v, %v", string(x.result), x.key, out_result, out_key)
+	if string(x.Result) != out_result || x.Key != out_key {
+		t.Errorf("DecryptXorCypher = %v, %v want %v, %v", string(x.Result), x.Key, out_result, out_key)
 	}
 }
 
-// 4. Detect single-character XOR
+// 4. Detect single-character Xor
 
-func Test_Question4_DetectXORCypher(t *testing.T) {
+func Test_Question4_DetectXorCypher(t *testing.T) {
 	const in, out = "gistfile1.txt", "Now that the party is jumping\n"
 
-	x := DetectXORLine(in)
+	x := DetectSingleXorLine(in)
 
 	if x != out {
-		t.Errorf("DetectXORLine(%v) = '%v' want '%v'", in, x, out)
+		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, x, out)
 	}
 }
