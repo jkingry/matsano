@@ -2,23 +2,45 @@ package package1
 
 import "os"
 import "fmt"
+import "flag"
+import "strings"
 import "bitbucket.org/jkingry/matsano/cmd"
 
 var Commands *cmd.Command = cmd.NewCommand("p1", "Package 1 commands")
 
 type encoding struct {
-	encode func ([]byte) string
-	decode func (string) []byte
+	encode func([]byte) string
+	decode func(string) []byte
+}
+
+var encodings map[string]encoding = map[string]encoding {
+"hex":    {HexEncodeToString, HexDecodeString},
+"base64": {Base64EncodeToString, Base64DecodeString},
+"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
+}
+
+func (e *encoding) String() string {
+	for k,v := range encodings {
+		if &v == e {
+			return k
+		}
+	}
+	return ""
+}
+
+func (e *encoding) Set(value string) error {
+	for k,v := range encodings {
+		if strings.HasPrefix(k, value) {
+			*e = v
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Invalid encoding: %v", value)
 }
 
 func init() {
-	encodings := map[string]encoding{
-		"hex":    {HexEncodeToString, HexDecodeString},
-		"base64": {Base64EncodeToString, Base64DecodeString},
-		"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
-	}
-
-	translate := func(decode func (string) []byte, encode func ([]byte) string) func ([]string) {
+	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
 		return func(args []string) {
 			data := decode(cmd.GetInput(args))
 			fmt.Print(encode(data))
@@ -26,37 +48,51 @@ func init() {
 	}
 
 	for inputName, inputEncoding := range encodings {
-		translateCommand := Commands.Add(inputName, "Translate from " + inputName)
+		translateCommand := Commands.Add(inputName, "Translate from "+inputName)
 		for outputName, outputEncoding := range encodings {
 			if outputName == inputName {
 				continue
 			}
-			translateCommand.Add(outputName, "to " + outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
+			translateCommand.Add(outputName, "to "+outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
 		}
 	}
 
-	Commands.Add("fixedXor", "").Command = func(args []string) {
-			key := HexDecodeString(args[0])
-			input := HexDecodeString(cmd.GetInput(args[1:]))
-			fmt.Print(HexEncodeToString(FixedXor(key, input)))
-		}
+	commonFlags := flag.NewFlagSet("common", flag.ContinueOnError)
+	p1Encode, p2Encode, poEncode := encodings["hex"], encodings["hex"], encodings["hex"]
 
-	Commands.Add("decryptSingleXor", "").Command = func(args []string) {
-			input := HexDecodeString(cmd.GetInput(args))
-			result := DecryptSingleXor(input)
+	commonFlags.Var(&p1Encode, "e1", "parameter 1 encoding")
+	commonFlags.Var(&p2Encode, "e2", "parameter 2 encoding")
+	commonFlags.Var(&poEncode, "eo", "output encoding")
 
-			fmt.Fprintln(os.Stderr, "Key:", result.Key)
+	fixedXor := Commands.Add("fixedXor", "")
+	fixedXor.Flags = commonFlags
+	fixedXor.Command = func(args []string) {
+		key := p1Encode.decode(args[0])
+		input := p2Encode.decode(cmd.GetInput(args[1:]))
+		fmt.Print(poEncode.encode(FixedXor(key, input)))
+	}
 
-			fmt.Print(string(result.Result))
-		}
+	decryptSingleXor := Commands.Add("decryptSingleXor", "")
+	decryptSingleXor.Flags = commonFlags
+	decryptSingleXor.Command = func(args []string) {
+		input := p1Encode.decode(cmd.GetInput(args))
+		result := DecryptSingleXor(input)
 
-	Commands.Add("detectSingleXorLine", "").Command = func(args []string) {
-			fmt.Print(DetectSingleXorLine(args[0]))
-		}
+		fmt.Fprintln(os.Stderr, "Key:", result.Key)
 
-	Commands.Add("xor", "").Command = func(args []string) {
-			key := HexDecodeString(args[0])
-			input := HexDecodeString(cmd.GetInput(args[1:]))
-			fmt.Print(HexEncodeToString(RepeatXor(key, input)))
-		}
+		fmt.Print(string(result.Result))
+	}
+
+	detectSingleXorLine := Commands.Add("detectSingleXorLine", "")
+	detectSingleXorLine.Command = func(args []string) {
+		fmt.Print(DetectSingleXorLine(args[0]))
+	}
+
+	xor := Commands.Add("xor", "")
+	xor.Flags = commonFlags
+	xor.Command = func(args []string) {
+		key := p1Encode.decode(args[0])
+		input := p2Encode.decode(cmd.GetInput(args[1:]))
+		fmt.Print(poEncode.encode(RepeatXor(key, input)))
+	}
 }

@@ -92,30 +92,18 @@ func DecryptSingleXor(in []byte) *XorDecrypt {
 }
 
 // 4. Detect single-character Xor
-
-func DetectSingleXorLine(path string) string {
-	file, err := os.Open(path)
-	if err != nil {
-		return ""
-	}
-
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
+func DetectSingleXorLine(input string) *XorDecrypt {
 	lines := make(chan util.Scorable)
 	found := util.MaxChannel(lines)
 
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	for line := range strings.Split(input, "\n") {
 		data := HexDecodeString(line)
 		lines <- DecryptSingleXor(data)
 	}
 
 	close(lines)
 
-	r := (<-found).(*XorDecrypt)
-
-	return string(r.Result)
+	return (<-found).(*XorDecrypt)
 }
 
 // 5. Repeating-key Xor Cipher

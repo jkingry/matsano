@@ -6,13 +6,12 @@ import "os"
 import "strings"
 import "io/ioutil"
 
-
 type Command struct {
-	Flags *flag.FlagSet
+	Flags   *flag.FlagSet
 	Command func([]string)
 
-	name string
-	usage string
+	name     string
+	usage    string
 	commands []*Command
 }
 
@@ -26,13 +25,13 @@ func NewCommand(name, usage string) *Command {
 }
 
 func (this *Command) printUsage(level int) {
-	indent := strings.Repeat(" ", level * 2)
+	indent := strings.Repeat(" ", level*2)
 	if this != rootCommands {
-		fmt.Println(indent, this.name + ": " + this.usage)
+		fmt.Println(indent, this.name+": "+this.usage)
 	}
 
 	this.Flags.VisitAll(func(flag *flag.Flag) {
-		fmt.Printf(indent + "  -%s=%s: %s\n", flag.Name, flag.DefValue, flag.Usage)
+		fmt.Printf(indent+"  -%s=%s: %s\n", flag.Name, flag.DefValue, flag.Usage)
 	})
 
 	if len(this.commands) == 0 {
