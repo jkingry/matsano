@@ -13,7 +13,7 @@ type Command struct {
 
 	name string
 	usage string
-	commands []Command
+	commands []*Command
 }
 
 func NewCommand(name, usage string) *Command {
@@ -27,7 +27,9 @@ func NewCommand(name, usage string) *Command {
 
 func (this *Command) printUsage(level int) {
 	indent := strings.Repeat(" ", level * 2)
-	fmt.Println(indent, this.name + ": " + this.usage)
+	if this != rootCommands {
+		fmt.Println(indent, this.name + ": " + this.usage)
+	}
 
 	this.Flags.VisitAll(func(flag *flag.Flag) {
 		fmt.Printf(indent + "  -%s=%s: %s\n", flag.Name, flag.DefValue, flag.Usage)
@@ -37,7 +39,7 @@ func (this *Command) printUsage(level int) {
 		return
 	}
 
-	fmt.Println(indent, "Commands:")
+	fmt.Println(indent, " commands:")
 	for _, c := range this.commands {
 		c.printUsage(level + 1)
 	}
@@ -50,6 +52,7 @@ func (this *Command) Run(args []string) {
 
 	if this.Command != nil {
 		this.Command(this.Flags.Args())
+		return
 	}
 
 	if this.Flags.NArg() == 0 {
@@ -70,7 +73,7 @@ func (this *Command) Run(args []string) {
 }
 
 func (this *Command) AddCommand(c *Command) {
-	this.commands = append(this.commands, *c)
+	this.commands = append(this.commands, c)
 }
 
 func (this *Command) Add(name, usage string) *Command {

@@ -28,6 +28,9 @@ func init() {
 	for inputName, inputEncoding := range encodings {
 		translateCommand := Commands.Add(inputName, "Translate from " + inputName)
 		for outputName, outputEncoding := range encodings {
+			if outputName == inputName {
+				continue
+			}
 			translateCommand.Add(outputName, "to " + outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
 		}
 	}
