@@ -4,7 +4,7 @@ import "os"
 import "fmt"
 import "bitbucket.org/jkingry/matsano/cmd"
 
-var CommandSet *cmd.CommandSet = cmd.NewCommandSet("p1")
+var Commands *cmd.Command = cmd.NewCommand("p1", "Package 1 commands")
 
 type encoding struct {
 	encode func ([]byte) string
@@ -26,35 +26,34 @@ func init() {
 	}
 
 	for inputName, inputEncoding := range encodings {
-		translateCommand := cmd.NewCommandSet(inputName)
+		translateCommand := Commands.Add(inputName, "Translate from " + inputName)
 		for outputName, outputEncoding := range encodings {
-			translateCommand.Add(cmd.NewCommand(outputName, nil, translate(inputEncoding.decode, outputEncoding.encode)))
+			translateCommand.Add(outputName, "to " + outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
 		}
-		CommandSet.Add(translateCommand)
 	}
 
-	CommandSet.Add(cmd.NewCommand("fixedXor", nil, func(args []string) {
+	Commands.Add("fixedXor", "").Command = func(args []string) {
 			key := HexDecodeString(args[0])
 			input := HexDecodeString(cmd.GetInput(args[1:]))
 			fmt.Print(HexEncodeToString(FixedXor(key, input)))
-		}))
+		}
 
-	CommandSet.Add(cmd.NewCommand("decryptSingleXor", nil, func(args []string) {
+	Commands.Add("decryptSingleXor", "").Command = func(args []string) {
 			input := HexDecodeString(cmd.GetInput(args))
 			result := DecryptSingleXor(input)
 
 			fmt.Fprintln(os.Stderr, "Key:", result.Key)
 
 			fmt.Print(string(result.Result))
-		}))
+		}
 
-	CommandSet.Add(cmd.NewCommand("detectSingleXorLine", nil, func(args []string) {
+	Commands.Add("detectSingleXorLine", "").Command = func(args []string) {
 			fmt.Print(DetectSingleXorLine(args[0]))
-		}))
+		}
 
-	CommandSet.Add(cmd.NewCommand("xor", nil, func(args []string) {
+	Commands.Add("xor", "").Command = func(args []string) {
 			key := HexDecodeString(args[0])
 			input := HexDecodeString(cmd.GetInput(args[1:]))
 			fmt.Print(HexEncodeToString(RepeatXor(key, input)))
-		}))
+		}
 }

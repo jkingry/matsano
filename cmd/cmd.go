@@ -6,32 +6,41 @@ import "os"
 import "strings"
 import "io/ioutil"
 
-type SubCommand interface {
-	String() string
-	Run([]string)
-}
 
 type Command struct {
 	Flags *flag.FlagSet
+	Command func([]string)
 
 	name string
-	run  func([]string)
+	usage string
+	commands []Command
 }
 
-func NewCommand(name string, flags *flag.FlagSet, run func([]string)) *Command {
+func NewCommand(name, usage string) *Command {
 	cmd := new(Command)
-	cmd.Flags = flags
-	if cmd.Flags == nil {
-		cmd.Flags = flag.NewFlagSet(name, flag.ContinueOnError)
-	}
+	cmd.Flags = flag.NewFlagSet(name, flag.ContinueOnError)
 	cmd.name = name
-	cmd.run = run
+	cmd.usage = usage
 
 	return cmd
 }
 
-func (this *Command) String() string {
-	return this.name
+func (this *Command) printUsage(level int) {
+	indent := strings.Repeat(" ", level * 2)
+	fmt.Println(indent, this.name + ": " + this.usage)
+
+	this.Flags.VisitAll(func(flag *flag.Flag) {
+		fmt.Printf(indent + "  -%s=%s: %s\n", flag.Name, flag.DefValue, flag.Usage)
+	})
+
+	if len(this.commands) == 0 {
+		return
+	}
+
+	fmt.Println(indent, "Commands:")
+	for _, c := range this.commands {
+		c.printUsage(level + 1)
+	}
 }
 
 func (this *Command) Run(args []string) {
@@ -39,64 +48,49 @@ func (this *Command) Run(args []string) {
 		return
 	}
 
-	this.run(this.Flags.Args())
-}
-
-type CommandSet struct {
-	Flags *flag.FlagSet
-
-	name     string
-	commands []SubCommand
-}
-
-func NewCommandSet(name string) *CommandSet {
-	cmd := new(CommandSet)
-	cmd.name = name
-	cmd.Flags = flag.NewFlagSet(name, flag.ContinueOnError)
-	cmd.Flags.Usage = func() {
-		fmt.Printf("Commands: %v", cmd.commands)
-	}
-	return cmd
-}
-
-func (this *CommandSet) String() string {
-	return this.name
-}
-
-func (this *CommandSet) Run(args []string) {
-	if ok := this.Flags.Parse(args); ok != nil {
-		return
+	if this.Command != nil {
+		this.Command(this.Flags.Args())
 	}
 
 	if this.Flags.NArg() == 0 {
-		this.Flags.Usage()
+		this.printUsage(0)
 		return
 	}
 
 	name := this.Flags.Arg(0)
-	for _, cmd := range this.commands {
-		if strings.HasPrefix(cmd.String(), name) {
-			cmd.Run(this.Flags.Args()[1:])
+	for _, c := range this.commands {
+		if strings.HasPrefix(c.name, name) {
+			c.Run(this.Flags.Args()[1:])
 			return
 		}
 	}
 
-	fmt.Println("Unknown command:", name)
-	this.Flags.Usage()
+	fmt.Fprintln(os.Stderr, "Unknown command:", name)
+	this.printUsage(0)
 }
 
-func (this *CommandSet) Add(cmd SubCommand) {
-	this.commands = append(this.commands, cmd)
+func (this *Command) AddCommand(c *Command) {
+	this.commands = append(this.commands, *c)
 }
 
-var rootCommandSet = NewCommandSet("")
+func (this *Command) Add(name, usage string) *Command {
+	c := NewCommand(name, usage)
+	this.AddCommand(c)
+	return c
+}
 
-func Add(cmd SubCommand) {
-	rootCommandSet.Add(cmd)
+var rootCommands = NewCommand("", "")
+
+func Add(name, usage string) *Command {
+	return rootCommands.Add(name, usage)
+}
+
+func AddCommand(c *Command) {
+	rootCommands.AddCommand(c)
 }
 
 func Run() {
-	rootCommandSet.Run(os.Args[1:])
+	rootCommands.Run(os.Args[1:])
 }
 
 func GetInput(args []string) string {

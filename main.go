@@ -11,6 +11,6 @@ import "bitbucket.org/jkingry/matsano/cmd"
 import "bitbucket.org/jkingry/matsano/package1"
 
 func main() {
-	cmd.Add(package1.CommandSet)
+	cmd.AddCommand(package1.Commands)
 	cmd.Run()
 }
