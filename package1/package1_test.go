@@ -93,9 +93,9 @@ func Test_Question6_DecryptXor(t *testing.T) {
 	data, _ := ioutil.ReadAll(fs)
 	data = Base64DecodeString(string(data))
 
-	result, _ := DecryptXor(data, 40)
+	result, key := DecryptXor(data, 40)
 
 	if string(result) != out {
-		t.Errorf("DecryptXor(%v) = '%v' want '%v'", in, string(result), out)
+		t.Errorf("DecryptXor(%v) = '%v', '%v' want '%v', '%v'", in, string(result), string(key), out, "")
 	}
 }

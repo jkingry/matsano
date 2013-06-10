@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 )
@@ -61,18 +62,54 @@ func singleXor(key byte, in []byte) []byte {
 	return result
 }
 
-func score(in []byte) int {
-	score := 0
+var letterScores map[byte] float64 = map[byte] float64 {
+'a':8.167,
+'b':1.492,
+'c':2.782,
+'d':4.253,
+'e':12.702,
+'f':2.228,
+'g':2.015,
+'h':6.094,
+'i':6.966,
+'j':0.153,
+'k':0.772,
+'l':4.025,
+'m':2.406,
+'n':6.749,
+'o':7.507,
+'p':1.929,
+'q':0.095,
+'r':5.987,
+'s':6.327,
+'t':9.056,
+'u':2.758,
+'v':0.978,
+'w':2.360,
+'x':0.150,
+'y':1.974,
+'z':0.074,
+' ':12.0,
+}
+
+func score(in []byte) float64 {
+	score := 0.0
 	for _, v := range in {
-		if (v >= 'A' && v <= 'Z') || (v >= 'a' && v < 'z') || v == ' ' || v == '.' {
-			score += 1
+		q := byte(0)
+		if q >= 'A' && q <= 'Z' {
+			q = byte(32)
 		}
+		if s, ok := letterScores[v + q]; ok {
+			score += s
+		}
+
 	}
 
 	return score
 }
 
-func DecryptSingleXor(in []byte) (maxResult []byte, maxKey byte, maxScore int) {
+func DecryptSingleXor(in []byte) (maxResult []byte, maxKey byte, maxScore float64) {
+	maxScore = math.MinInt32
 	for i := 0; i < 256; i++ {
 		key := byte(i)
 		result := singleXor(key, in)
@@ -92,7 +129,7 @@ type Encoder func([]byte) string
 type Decoder func(string) []byte
 
 func DetectSingleXorLine(input string, decode Decoder) (maxResult []byte, maxKey byte, maxLine int) {
-	var maxScore int = 0
+	var maxScore = 0.0
 
 	for i, line := range strings.Split(input, "\n") {
 		data := decode(strings.TrimSpace(line))
@@ -160,14 +197,14 @@ func DecryptXor(in []byte, maxKeySize int) (maxResult []byte, maxKey []byte) {
 
 	sort.Sort(&keys)
 
-	maxScore := 0
+	maxScore := 0.0
 
-	for index := 0; index < 4; index++ {
+	for index := 0; index < 1; index++ {
 		result := make([]byte, len(in))
 		keySize := keys.size[index]
 		key := make([]byte, keySize)
 		block := make([]byte, 0, len(in)/keySize)
-		score := 0
+		score := 0.0
 
 		for k := 0; k < keySize; k++ {
 			block = block[0:0]
@@ -181,11 +218,11 @@ func DecryptXor(in []byte, maxKeySize int) (maxResult []byte, maxKey []byte) {
 			for b := 0; b < len(blockResult); b++ {
 				result[k+(b*keySize)] = blockResult[b]
 			}
+			fmt.Printf("key[%v] = %v, score %v\n", k, blockKey, blockScore)
 			score += blockScore
 		}
 
-		fmt.Printf("keySize: %v, score: %v\n", keySize, score)
-		fmt.Printf("%v\n", string(result))
+		fmt.Printf("keySize: %v, score: %v, distance: %v\n", keySize, score, keys.distance[index])
 
 		if score > maxScore {
 			maxResult = result
