@@ -4,6 +4,7 @@ import "encoding/hex"
 import "encoding/base64"
 import "strings"
 import "bitbucket.org/jkingry/matsano/util"
+import "sort"
 
 // 1. Convert hex to base64 and back.
 
@@ -116,4 +117,46 @@ func RepeatXor(key, source []byte) []byte {
 	}
 
 	return output
+}
+
+// 6. Break repeating-key XOR
+
+func hammingDistance(a, b []byte) (distance int) {
+	for i :=0; i < len(a); i++ {
+		for h := uint(0); h < 8; h++ {
+			t := byte(1 << h)
+			if (t & a[i]) != (t & b[i]) {
+				distance += 1
+			}
+		}
+	}
+
+	return
+}
+
+type keyData struct {
+	distance []float64
+	size []int
+}
+
+func (k *keyData) Len() int { return len(k.distance) }
+func (k *keyData) Less(i, j int) bool { return k.distance[i] < k.distance[j] }
+func (k *keyData) Swap(i, j int) {
+	k.distance[i], k.distance[j] = k.distance[j], k.distance[i]
+	k.size[i], k.size[j] = k.size[j], k.size[i]
+}
+
+func DecryptXor(in []byte, maxKeySize int) (maxResult []byte, maxKey byte) {
+	keys := keyData { make([]float64, maxKeySize), make([]int, maxKeySize) }
+	for keySize := 2; keySize <= maxKeySize; keySize++ {
+		first := in[0:keySize]
+		second := in[keySize:keySize + keySize]
+		keys.size[keySize] = keySize
+		keys.distance[keySize] = 1.0 * hammingDistance(first, second) / keySize
+	}
+
+	sort.Sort(&keys)
+
+	fmt.Println()
+	return
 }

@@ -3,6 +3,7 @@ package package1
 import "testing"
 import "io/ioutil"
 import "os"
+import "strconv"
 
 // 1. Convert hex to base64 and back.
 
@@ -35,13 +36,13 @@ func Test_Question2_fixedXor(t *testing.T) {
 
 // 3. Single-character Xor Cipher
 
-func Test_Question3_DecryptXorCypher(t *testing.T) {
+func Test_Question3_DecryptSingleXor(t *testing.T) {
 	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
 
 	result, key := DecryptSingleXor(HexDecodeString(in))
 
 	if string(result) != out_result || key != out_key {
-		t.Errorf("DecryptXorCypher = %v, %v want %v, %v", string(result), key, out_result, out_key)
+		t.Errorf("DecryptSingleXor = %v, %v want %v, %v", string(result), key, out_result, out_key)
 	}
 }
 
@@ -57,7 +58,7 @@ func Test_Question4_DetectXorCypher(t *testing.T) {
 	result, _, _ := DetectSingleXorLine(string(data), HexDecodeString)
 
 	if string(result) != out {
-		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, string(result), out)
+		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, strconv.Quote(string(result)), strconv.Quote(out))
 	}
 }
 
@@ -69,6 +70,32 @@ func Test_Question5_RepeatingXor(t *testing.T) {
 	x := RepeatXor([]byte(key), []byte(in))
 
 	if HexEncodeToString(x) != out {
-		t.Errorf("RepeatXor(%v, %v) = '%v' want '%v'", key, in, x, out)
+		t.Errorf("RepeatXor(%v, %v) = '%v' want '%v'", key, strconv.Quote(in), HexEncodeToString(x), out)
+	}
+}
+
+// 6. Break repeating-key XOR
+func Test_Question6_hammingDistance(t *testing.T) {
+	const a, b, out = "this is a test", "wokka wokka!!!", 37
+
+	x := hammingDistance([]byte(a),[]byte(b))
+
+	if x != out {
+		t.Errorf("hammingDistance('%v', '%v') = %v want %v", a, b, x, out)
+	}
+}
+
+func Test_Question6_DecryptXor(t *testing.T) {
+	const in, out = "gistfile2.txt", "??"
+	fs, _ := os.Open(in)
+	defer fs.Close()
+
+	data, _ := ioutil.ReadAll(fs)
+	data = Base64DecodeString(string(data))
+
+	result, _ := DecryptXor(data, 40)
+
+	if string(result) != out {
+		t.Errorf("DecryptXor(%v) = '%v' want '%v'", in, string(result), out)
 	}
 }
