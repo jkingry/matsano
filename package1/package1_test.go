@@ -1,6 +1,8 @@
 package package1
 
 import "testing"
+import "io/ioutil"
+import "os"
 
 // 1. Convert hex to base64 and back.
 
@@ -36,10 +38,10 @@ func Test_Question2_fixedXor(t *testing.T) {
 func Test_Question3_DecryptXorCypher(t *testing.T) {
 	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
 
-	x := DecryptSingleXor(HexDecodeString(in))
+	result, key := DecryptSingleXor(HexDecodeString(in))
 
-	if string(x.Result) != out_result || x.Key != out_key {
-		t.Errorf("DecryptXorCypher = %v, %v want %v, %v", string(x.Result), x.Key, out_result, out_key)
+	if string(result) != out_result || key != out_key {
+		t.Errorf("DecryptXorCypher = %v, %v want %v, %v", string(result), key, out_result, out_key)
 	}
 }
 
@@ -47,11 +49,15 @@ func Test_Question3_DecryptXorCypher(t *testing.T) {
 
 func Test_Question4_DetectXorCypher(t *testing.T) {
 	const in, out = "gistfile1.txt", "Now that the party is jumping\n"
+	fs, _ := os.Open(in)
+	defer fs.Close()
 
-	x := DetectSingleXorLine(in)
+	data, _ := ioutil.ReadAll(fs)
 
-	if x != out {
-		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, x, out)
+	result, _, _ := DetectSingleXorLine(string(data), HexDecodeString)
+
+	if string(result) != out {
+		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, string(result), out)
 	}
 }
 

@@ -95,9 +95,18 @@ func Run() {
 	rootCommands.Run(os.Args[1:])
 }
 
-func GetInput(args []string) string {
-	if len(args) != 0 {
-		return args[0]
+func GetInput(args []string, index int) string {
+	if len(args) > index {
+		arg := args[index]
+		if !strings.HasPrefix(arg, "file:") {
+			return arg
+		}
+
+		file, _ := os.Open(strings.TrimPrefix(arg, "file:"))
+		defer file.Close()
+		data, _ := ioutil.ReadAll(file)
+
+		return string(data)
 	}
 	data, _ := ioutil.ReadAll(os.Stdin)
 

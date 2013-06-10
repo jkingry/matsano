@@ -42,7 +42,7 @@ func (e *encoding) Set(value string) error {
 func init() {
 	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
 		return func(args []string) {
-			data := decode(cmd.GetInput(args))
+			data := decode(cmd.GetInput(args, 0))
 			fmt.Print(encode(data))
 		}
 	}
@@ -67,32 +67,37 @@ func init() {
 	fixedXor := Commands.Add("fixedXor", "")
 	fixedXor.Flags = commonFlags
 	fixedXor.Command = func(args []string) {
-		key := p1Encode.decode(args[0])
-		input := p2Encode.decode(cmd.GetInput(args[1:]))
+		key := p1Encode.decode(cmd.GetInput(args, 0))
+		input := p2Encode.decode(cmd.GetInput(args, 1))
 		fmt.Print(poEncode.encode(FixedXor(key, input)))
 	}
 
 	decryptSingleXor := Commands.Add("decryptSingleXor", "")
 	decryptSingleXor.Flags = commonFlags
 	decryptSingleXor.Command = func(args []string) {
-		input := p1Encode.decode(cmd.GetInput(args))
-		result := DecryptSingleXor(input)
+		input := p1Encode.decode(cmd.GetInput(args, 0))
+		result, key := DecryptSingleXor(input)
 
-		fmt.Fprintln(os.Stderr, "Key:", result.Key)
+		fmt.Fprintln(os.Stderr, "Key:", key)
 
-		fmt.Print(string(result.Result))
+		fmt.Print(string(result))
 	}
 
 	detectSingleXorLine := Commands.Add("detectSingleXorLine", "")
+	detectSingleXorLine.Flags = commonFlags
 	detectSingleXorLine.Command = func(args []string) {
-		fmt.Print(DetectSingleXorLine(args[0]))
+		result, key, line := DetectSingleXorLine(cmd.GetInput(args, 0), p1Encode.decode)
+
+		fmt.Fprintln(os.Stderr, "Key:", key, "Line:", line)
+
+		fmt.Print(poEncode.encode(result))
 	}
 
 	xor := Commands.Add("xor", "")
 	xor.Flags = commonFlags
 	xor.Command = func(args []string) {
-		key := p1Encode.decode(args[0])
-		input := p2Encode.decode(cmd.GetInput(args[1:]))
+		key := p1Encode.decode(cmd.GetInput(args, 0))
+		input := p2Encode.decode(cmd.GetInput(args, 1))
 		fmt.Print(poEncode.encode(RepeatXor(key, input)))
 	}
 }

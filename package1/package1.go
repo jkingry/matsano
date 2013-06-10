@@ -2,8 +2,6 @@ package package1
 
 import "encoding/hex"
 import "encoding/base64"
-import "bufio"
-import "os"
 import "strings"
 import "bitbucket.org/jkingry/matsano/util"
 
@@ -70,40 +68,43 @@ func score(in []byte) int {
 	return score
 }
 
-type XorDecrypt struct {
-	Result []byte
-	Key    byte
-}
+func DecryptSingleXor(in []byte) (maxResult []byte, maxKey byte) {
+	var maxScore int = 0
 
-func (x *XorDecrypt) Score() int {
-	return score(x.Result)
-}
-
-func DecryptSingleXor(in []byte) *XorDecrypt {
-	keys := make(chan util.Scorable)
-	result := util.MaxChannel(keys)
 	for i := 0; i < 256; i++ {
 		key := byte(i)
-		keys <- &XorDecrypt{singleXor(key, in), key}
+		result := singleXor(key, in)
+		s := score(result)
+        if s > maxScore {
+			maxScore = s
+			maxResult = result
+			maxKey = key
+        }
 	}
-	close(keys)
 
-	return (<-result).(*XorDecrypt)
+	return
 }
 
 // 4. Detect single-character Xor
-func DetectSingleXorLine(input string) *XorDecrypt {
-	lines := make(chan util.Scorable)
-	found := util.MaxChannel(lines)
+type Encoder func([]byte) string
+type Decoder func(string) []byte
 
-	for line := range strings.Split(input, "\n") {
-		data := HexDecodeString(line)
-		lines <- DecryptSingleXor(data)
+func DetectSingleXorLine(input string, decode Decoder) (maxResult []byte, maxKey byte, maxLine int) {
+	var maxScore int = 0
+
+	for i, line := range strings.Split(input, "\n") {
+		data := decode(line)
+		result, key := DecryptSingleXor(data)
+		s := score(result)
+		if (s > maxScore) {
+			maxScore = s
+			maxResult = result
+			maxKey = key
+			maxLine = i
+		}
 	}
 
-	close(lines)
-
-	return (<-found).(*XorDecrypt)
+	return
 }
 
 // 5. Repeating-key Xor Cipher
