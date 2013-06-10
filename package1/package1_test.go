@@ -39,7 +39,7 @@ func Test_Question2_fixedXor(t *testing.T) {
 func Test_Question3_DecryptSingleXor(t *testing.T) {
 	const in, out_result, out_key = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736", "Cooking MC's like a pound of bacon", byte(88)
 
-	result, key := DecryptSingleXor(HexDecodeString(in))
+	result, key, _ := DecryptSingleXor(HexDecodeString(in))
 
 	if string(result) != out_result || key != out_key {
 		t.Errorf("DecryptSingleXor = %v, %v want %v, %v", string(result), key, out_result, out_key)
@@ -78,7 +78,7 @@ func Test_Question5_RepeatingXor(t *testing.T) {
 func Test_Question6_hammingDistance(t *testing.T) {
 	const a, b, out = "this is a test", "wokka wokka!!!", 37
 
-	x := hammingDistance([]byte(a),[]byte(b))
+	x := hammingDistance([]byte(a), []byte(b))
 
 	if x != out {
 		t.Errorf("hammingDistance('%v', '%v') = %v want %v", a, b, x, out)

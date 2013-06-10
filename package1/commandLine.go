@@ -9,18 +9,18 @@ import "bitbucket.org/jkingry/matsano/cmd"
 var Commands *cmd.Command = cmd.NewCommand("p1", "Package 1 commands")
 
 type encoding struct {
-	encode func([]byte) string
-	decode func(string) []byte
+	encode func ([]byte) string
+	decode func (string) []byte
 }
 
 var encodings map[string]encoding = map[string]encoding {
-"hex":    {HexEncodeToString, HexDecodeString},
-"base64": {Base64EncodeToString, Base64DecodeString},
-"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
+	"hex":    {HexEncodeToString, HexDecodeString},
+	"base64": {Base64EncodeToString, Base64DecodeString},
+	"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
 }
 
 func (e *encoding) String() string {
-	for k,v := range encodings {
+	for k, v := range encodings {
 		if &v == e {
 			return k
 		}
@@ -29,7 +29,7 @@ func (e *encoding) String() string {
 }
 
 func (e *encoding) Set(value string) error {
-	for k,v := range encodings {
+	for k, v := range encodings {
 		if strings.HasPrefix(k, value) {
 			*e = v
 			return nil
@@ -40,7 +40,7 @@ func (e *encoding) Set(value string) error {
 }
 
 func init() {
-	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
+	translate := func(decode func (string) []byte, encode func ([]byte) string) func ([]string) {
 		return func(args []string) {
 			data := decode(cmd.GetInput(args, 0))
 			fmt.Print(encode(data))
@@ -48,12 +48,12 @@ func init() {
 	}
 
 	for inputName, inputEncoding := range encodings {
-		translateCommand := Commands.Add(inputName, "Translate from "+inputName)
+		translateCommand := Commands.Add(inputName, "Translate from " + inputName)
 		for outputName, outputEncoding := range encodings {
 			if outputName == inputName {
 				continue
 			}
-			translateCommand.Add(outputName, "to "+outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
+			translateCommand.Add(outputName, "to " + outputName).Command = translate(inputEncoding.decode, outputEncoding.encode)
 		}
 	}
 
@@ -76,7 +76,7 @@ func init() {
 	decryptSingleXor.Flags = commonFlags
 	decryptSingleXor.Command = func(args []string) {
 		input := p1Encode.decode(cmd.GetInput(args, 0))
-		result, key := DecryptSingleXor(input)
+		result, key, _ := DecryptSingleXor(input)
 
 		fmt.Fprintln(os.Stderr, "Key:", key)
 
@@ -99,5 +99,14 @@ func init() {
 		key := p1Encode.decode(cmd.GetInput(args, 0))
 		input := p2Encode.decode(cmd.GetInput(args, 1))
 		fmt.Print(poEncode.encode(RepeatXor(key, input)))
+	}
+
+	decryptXor := Commands.Add("decryptXor", "")
+	decryptXor.Flags = commonFlags
+	decryptXor.Command = func(args []string) {
+		input := p2Encode.decode(cmd.GetInput(args, 0))
+		result, key := DecryptXor(input, 40)
+		fmt.Fprintln(os.Stderr, "Key:", key)
+		fmt.Print(poEncode.encode(result))
 	}
 }
