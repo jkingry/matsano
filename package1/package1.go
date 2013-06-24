@@ -1,14 +1,13 @@
 package package1
 
 import (
-	"bitbucket.org/jkingry/matsano/util"
+	"bitbucket.org/jkingry/matsano/histogram"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"math"
-	"sort"
 	"strings"
 )
+
 
 // 1. Convert hex to base64 and back.
 
@@ -41,7 +40,13 @@ func Base64EncodeToString(src []byte) string {
 // 2. Fixed Xor
 
 func FixedXor(a, b []byte) []byte {
-	result_size := util.MinInt(len(a), len(b))
+	var result_size int
+	if len(a) < len(b) {
+		result_size = len(a)
+	} else {
+		result_size = len(b)
+	}
+
 	result := make([]byte, result_size)
 
 	for i := 0; i < result_size; i++ {
@@ -62,62 +67,22 @@ func singleXor(key byte, in []byte) []byte {
 	return result
 }
 
-var letterScores map[byte] float64 = map[byte] float64 {
-'a':8.167,
-'b':1.492,
-'c':2.782,
-'d':4.253,
-'e':12.702,
-'f':2.228,
-'g':2.015,
-'h':6.094,
-'i':6.966,
-'j':0.153,
-'k':0.772,
-'l':4.025,
-'m':2.406,
-'n':6.749,
-'o':7.507,
-'p':1.929,
-'q':0.095,
-'r':5.987,
-'s':6.327,
-'t':9.056,
-'u':2.758,
-'v':0.978,
-'w':2.360,
-'x':0.150,
-'y':1.974,
-'z':0.074,
-' ':12.0,
-}
-
 func score(in []byte) float64 {
-	score := 0.0
-	for _, v := range in {
-		q := byte(0)
-		if q >= 'A' && q <= 'Z' {
-			q = byte(32)
-		}
-		if s, ok := letterScores[v + q]; ok {
-			score += s
-		}
-
-	}
-
-	return score
+	frequency := histogram.New(in)
+	frequency.Normalize()
+	return frequency.ChiSquaredDistance(characters)
 }
 
-func DecryptSingleXor(in []byte) (maxResult []byte, maxKey byte, maxScore float64) {
-	maxScore = math.MinInt32
+func DecryptSingleXor(in []byte) (minResult []byte, minKey byte, minScore float64) {
+	minScore = math.MaxFloat64
 	for i := 0; i < 256; i++ {
 		key := byte(i)
 		result := singleXor(key, in)
 		s := score(result)
-		if s > maxScore {
-			maxScore = s
-			maxResult = result
-			maxKey = key
+		if s < minScore {
+			minScore = s
+			minResult = result
+			minKey = key
 		}
 	}
 
@@ -128,17 +93,23 @@ func DecryptSingleXor(in []byte) (maxResult []byte, maxKey byte, maxScore float6
 type Encoder func([]byte) string
 type Decoder func(string) []byte
 
-func DetectSingleXorLine(input string, decode Decoder) (maxResult []byte, maxKey byte, maxLine int) {
-	var maxScore = 0.0
+func DetectSingleXorLine(input string, decode Decoder) (minResult []byte, minKey byte, minLine int) {
+	var minScore = math.MaxFloat64
 
 	for i, line := range strings.Split(input, "\n") {
+		line = strings.TrimSpace(line)
+
+		if len(line) == 0 {
+			continue
+		}
+
 		data := decode(strings.TrimSpace(line))
 		result, key, s := DecryptSingleXor(data)
-		if s > maxScore {
-			maxScore = s
-			maxResult = result
-			maxKey = key
-			maxLine = i
+		if s < minScore {
+			minScore = s
+			minResult = result
+			minKey = key
+			minLine = i
 		}
 	}
 
@@ -171,44 +142,54 @@ func hammingDistance(a, b []byte) (distance int) {
 	return
 }
 
-type keyData struct {
-	distance []float64
-	size     []int
+type keySizeType struct {
+	size int
+	d    float64
 }
 
-func (k *keyData) Len() int           { return len(k.distance) }
-func (k *keyData) Less(i, j int) bool { return k.distance[i] < k.distance[j] }
-func (k *keyData) Swap(i, j int) {
-	k.distance[i], k.distance[j] = k.distance[j], k.distance[i]
-	k.size[i], k.size[j] = k.size[j], k.size[i]
-}
+func DecryptXor(in []byte, coverage float64) (minResult []byte, minKey []byte) {
+	keySizeFraction := int(math.Floor(1.0 / coverage))
+	maxKeySize := len(in) / keySizeFraction
 
-func DecryptXor(in []byte, maxKeySize int) (maxResult []byte, maxKey []byte) {
-	if (len(in) / 2) < maxKeySize {
-		maxKeySize = len(in) / 2
-	}
-	keys := keyData{make([]float64, maxKeySize-2), make([]int, maxKeySize-2)}
+	keys := make([]keySizeType, 0)
+	var averageDistance float64
+
 	for keySize := 2; keySize < maxKeySize; keySize++ {
-		first := in[0:keySize]
-		second := in[keySize : keySize+keySize]
-		keys.size[keySize-2] = keySize
-		keys.distance[keySize-2] = float64(hammingDistance(first, second)) / float64(keySize)
+		key := keySizeType{size: keySize}
+
+		count := 0.0
+		for i := 0; i < keySizeFraction; i++ {
+			a := in[(i * keySize):((i + 1) * keySize)]
+			for j := i; j < keySizeFraction; j++ {
+				b := in[(j * keySize):((j + 1) * keySize)]
+				key.d += float64(hammingDistance(a, b))
+				count += 1.0
+			}
+		}
+
+		key.d = key.d / (count * float64(keySize))
+		if len(keys) == 0 || key.d < averageDistance {
+			keys = append(keys, key)
+			averageDistance = 0
+			for _, k := range keys {
+				averageDistance += k.d
+			}
+			averageDistance /= float64(len(keys))
+		}
 	}
 
-	sort.Sort(&keys)
+	minScore := math.MaxFloat64
 
-	maxScore := 0.0
-
-	for index := 0; index < 1; index++ {
+	for _, keySize := range keys {
+		key := make([]byte, keySize.size)
 		result := make([]byte, len(in))
-		keySize := keys.size[index]
-		key := make([]byte, keySize)
-		block := make([]byte, 0, len(in)/keySize)
+
+		block := make([]byte, 0, len(in)/keySize.size)
 		score := 0.0
 
-		for k := 0; k < keySize; k++ {
+		for k := 0; k < keySize.size; k++ {
 			block = block[0:0]
-			for p := k; p < len(in); p += keySize {
+			for p := k; p < len(in); p += keySize.size {
 				block = append(block, in[p])
 			}
 
@@ -216,18 +197,17 @@ func DecryptXor(in []byte, maxKeySize int) (maxResult []byte, maxKey []byte) {
 
 			key[k] = blockKey
 			for b := 0; b < len(blockResult); b++ {
-				result[k+(b*keySize)] = blockResult[b]
+				result[k+(b*keySize.size)] = blockResult[b]
 			}
-			fmt.Printf("key[%v] = %v, score %v\n", k, blockKey, blockScore)
 			score += blockScore
 		}
 
-		fmt.Printf("keySize: %v, score: %v, distance: %v\n", keySize, score, keys.distance[index])
+		score /= float64(keySize.size)
 
-		if score > maxScore {
-			maxResult = result
-			maxKey = key
-			maxScore = score
+		if score < minScore {
+			minResult = result
+			minKey = key
+			minScore = score
 		}
 	}
 

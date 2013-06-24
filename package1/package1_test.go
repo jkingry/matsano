@@ -42,7 +42,7 @@ func Test_Question3_DecryptSingleXor(t *testing.T) {
 	result, key, _ := DecryptSingleXor(HexDecodeString(in))
 
 	if string(result) != out_result || key != out_key {
-		t.Errorf("DecryptSingleXor = %v, %v want %v, %v", string(result), key, out_result, out_key)
+		t.Errorf("DecryptSingleXor = %#v, %#v want %#v, %#v", string(result), key, out_result, out_key)
 	}
 }
 
@@ -58,7 +58,7 @@ func Test_Question4_DetectXorCypher(t *testing.T) {
 	result, _, _ := DetectSingleXorLine(string(data), HexDecodeString)
 
 	if string(result) != out {
-		t.Errorf("DetectXorLine(%v) = '%v' want '%v'", in, strconv.Quote(string(result)), strconv.Quote(out))
+		t.Errorf("DetectXorLine(%#v) = %#v want %#v", in, string(result), out)
 	}
 }
 
@@ -70,7 +70,7 @@ func Test_Question5_RepeatingXor(t *testing.T) {
 	x := RepeatXor([]byte(key), []byte(in))
 
 	if HexEncodeToString(x) != out {
-		t.Errorf("RepeatXor(%v, %v) = '%v' want '%v'", key, strconv.Quote(in), HexEncodeToString(x), out)
+		t.Errorf("RepeatXor(%v, %v) = %v want %v", key, strconv.Quote(in), strconv.Quote(HexEncodeToString(x)), out)
 	}
 }
 
@@ -86,16 +86,16 @@ func Test_Question6_hammingDistance(t *testing.T) {
 }
 
 func Test_Question6_DecryptXor(t *testing.T) {
-	const in, out = "gistfile2.txt", "??"
+	const in, out = "gistfile2.txt", "Terminator X: Bring the noise"
 	fs, _ := os.Open(in)
 	defer fs.Close()
 
 	data, _ := ioutil.ReadAll(fs)
 	data = Base64DecodeString(string(data))
 
-	result, key := DecryptXor(data, 40)
+	_, key := DecryptXor(data, 0.05)
 
-	if string(result) != out {
-		t.Errorf("DecryptXor(%v) = '%v', '%v' want '%v', '%v'", in, string(result), string(key), out, "")
+	if string(key) != out {
+		t.Errorf("DecryptXor(%#v, 4, 10) = %#v want %#v", in, string(key), out)
 	}
 }

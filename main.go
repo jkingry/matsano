@@ -7,10 +7,14 @@
  */
 package main
 
-import "bitbucket.org/jkingry/matsano/cmd"
-import "bitbucket.org/jkingry/matsano/package1"
+import (
+	"bitbucket.org/jkingry/matsano/cmd"
+	"bitbucket.org/jkingry/matsano/histogram"
+	"bitbucket.org/jkingry/matsano/package1"
+)
 
 func main() {
 	cmd.AddCommand(package1.Commands)
+	cmd.AddCommand(histogram.Commands)
 	cmd.Run()
 }

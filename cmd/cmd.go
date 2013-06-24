@@ -5,6 +5,7 @@ import "fmt"
 import "os"
 import "strings"
 import "io/ioutil"
+import "net/http"
 
 type Command struct {
 	Flags   *flag.FlagSet
@@ -96,19 +97,28 @@ func Run() {
 }
 
 func GetInput(args []string, index int) string {
-	if len(args) > index {
-		arg := args[index]
-		if !strings.HasPrefix(arg, "file:") {
-			return arg
-		}
+	var arg string
+	if len(args) < index {
+		arg = "stdin"
+	} else {
+		arg = args[index]
+	}
 
+	switch {
+	case strings.HasPrefix(arg, "file:"):
 		file, _ := os.Open(strings.TrimPrefix(arg, "file:"))
 		defer file.Close()
-		data, _ := ioutil.ReadAll(file)
-
-		return string(data)
+		bytes, _ := ioutil.ReadAll(file)
+		return string(bytes)
+	case strings.HasPrefix(arg, "http:"):
+		resp, _ := http.Get(arg)
+		defer resp.Body.Close()
+		bytes, _ := ioutil.ReadAll(resp.Body)
+		return string(bytes)
+	case strings.HasPrefix(arg, "stdin"):
+		bytes, _ := ioutil.ReadAll(os.Stdin)
+		return string(bytes)
 	}
-	data, _ := ioutil.ReadAll(os.Stdin)
 
-	return string(data)
+	return arg
 }

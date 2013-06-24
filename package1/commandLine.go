@@ -64,6 +64,29 @@ func init() {
 	commonFlags.Var(&p2Encode, "e2", "parameter 2 encoding")
 	commonFlags.Var(&poEncode, "eo", "output encoding")
 
+	xor := Commands.Add("xor", "")
+	xor.Flags = commonFlags
+	xor.Command = func(args []string) {
+		key := p1Encode.decode(cmd.GetInput(args, 0))
+		input := p2Encode.decode(cmd.GetInput(args, 1))
+		fmt.Print(poEncode.encode(RepeatXor(key, input)))
+	}
+
+	var coverage float64
+	decryptFlags := flag.NewFlagSet("decryptXor", flag.ContinueOnError)
+	decryptFlags.Var(&p1Encode, "e1", "parameter 1 encoding")
+	decryptFlags.Var(&poEncode, "eo", "output encoding")
+	decryptFlags.Float64Var(&coverage, "c", 0.25, "percentage coverage")
+
+	decryptXor := Commands.Add("decryptXor", "")
+	decryptXor.Flags = decryptFlags
+	decryptXor.Command = func(args []string) {
+		input := p1Encode.decode(cmd.GetInput(args, 0))
+		result, key := DecryptXor(input, coverage)
+		fmt.Fprintln(os.Stderr, "Key:", key)
+		fmt.Print(poEncode.encode(result))
+	}
+
 	fixedXor := Commands.Add("fixedXor", "")
 	fixedXor.Flags = commonFlags
 	fixedXor.Command = func(args []string) {
@@ -90,23 +113,6 @@ func init() {
 
 		fmt.Fprintln(os.Stderr, "Key:", key, "Line:", line)
 
-		fmt.Print(poEncode.encode(result))
-	}
-
-	xor := Commands.Add("xor", "")
-	xor.Flags = commonFlags
-	xor.Command = func(args []string) {
-		key := p1Encode.decode(cmd.GetInput(args, 0))
-		input := p2Encode.decode(cmd.GetInput(args, 1))
-		fmt.Print(poEncode.encode(RepeatXor(key, input)))
-	}
-
-	decryptXor := Commands.Add("decryptXor", "")
-	decryptXor.Flags = commonFlags
-	decryptXor.Command = func(args []string) {
-		input := p2Encode.decode(cmd.GetInput(args, 0))
-		result, key := DecryptXor(input, 40)
-		fmt.Fprintln(os.Stderr, "Key:", key)
 		fmt.Print(poEncode.encode(result))
 	}
 }
