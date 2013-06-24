@@ -83,7 +83,7 @@ func init() {
 	decryptXor.Command = func(args []string) {
 		input := p1Encode.decode(cmd.GetInput(args, 0))
 		result, key := DecryptXor(input, coverage)
-		fmt.Fprintln(os.Stderr, "Key:", key)
+		fmt.Fprintln(os.Stderr, "Key:", poEncode.encode(key))
 		fmt.Print(poEncode.encode(result))
 	}
 

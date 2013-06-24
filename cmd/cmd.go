@@ -110,7 +110,7 @@ func GetInput(args []string, index int) string {
 		defer file.Close()
 		bytes, _ := ioutil.ReadAll(file)
 		return string(bytes)
-	case strings.HasPrefix(arg, "http:"):
+	case strings.HasPrefix(arg, "http"):
 		resp, _ := http.Get(arg)
 		defer resp.Body.Close()
 		bytes, _ := ioutil.ReadAll(resp.Body)
