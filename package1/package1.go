@@ -2,12 +2,12 @@ package package1
 
 import (
 	"bitbucket.org/jkingry/matsano/histogram"
+	"crypto/aes"
 	"encoding/base64"
 	"encoding/hex"
 	"math"
 	"strings"
 )
-
 
 // 1. Convert hex to base64 and back.
 
@@ -212,4 +212,23 @@ func DecryptXor(in []byte, coverage float64) (minResult []byte, minKey []byte) {
 	}
 
 	return
+}
+
+// 7. AES in ECB Mode
+
+func DecryptAes(encrypted, key []byte) []byte {
+	cipher, _ := aes.NewCipher(key)
+
+	decrypted := make([]byte, len(encrypted))
+
+	for i := 0; i < len(encrypted); i += cipher.BlockSize() {
+		e := i + cipher.BlockSize()
+
+		eblock := encrypted[i:e]
+		dblock := decrypted[i:e]
+
+		cipher.Decrypt(dblock, eblock)
+	}
+
+	return decrypted
 }

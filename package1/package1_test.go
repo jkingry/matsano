@@ -4,6 +4,7 @@ import "testing"
 import "io/ioutil"
 import "os"
 import "strconv"
+import "strings"
 
 // 1. Convert hex to base64 and back.
 
@@ -97,5 +98,21 @@ func Test_Question6_DecryptXor(t *testing.T) {
 
 	if string(key) != out {
 		t.Errorf("DecryptXor(%#v, 4, 10) = %#v want %#v", in, string(key), out)
+	}
+}
+
+func Test_Question7_DecryptAesEcb(t *testing.T) {
+	const in, out = "gistfile3.txt", "I'm back and I'm ringin' the bell"
+
+	fs, _ := os.Open(in)
+	defer fs.Close()
+
+	data, _ := ioutil.ReadAll(fs)
+	data = Base64DecodeString(string(data))
+
+	result := DecryptAes(data, []byte("YELLOW SUBMARINE"))
+
+	if !strings.HasPrefix(string(result), "I'm back and I'm ringin' the bell") {
+		t.Errorf("DecryptAes failed")
 	}
 }

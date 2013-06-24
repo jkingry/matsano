@@ -115,4 +115,15 @@ func init() {
 
 		fmt.Print(poEncode.encode(result))
 	}
+
+	decryptAes := Commands.Add("decryptAes", "")
+	decryptAes.Flags = commonFlags
+	decryptAes.Command = func(args []string) {
+		key := p1Encode.decode(cmd.GetInput(args, 0))
+		input := p2Encode.decode(cmd.GetInput(args, 1))
+
+		result := DecryptAes(input, key)
+
+		fmt.Print(poEncode.encode(result))
+	}
 }
