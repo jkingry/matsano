@@ -70,7 +70,7 @@ func singleXor(key byte, in []byte) []byte {
 func score(in []byte) float64 {
 	frequency := histogram.New(in)
 	frequency.Normalize()
-	return frequency.ChiSquaredDistance(characters)
+	return frequency.ChiSquaredDistance(englishLetters)
 }
 
 func DecryptSingleXor(in []byte) (minResult []byte, minKey byte, minScore float64) {
@@ -160,7 +160,7 @@ func DecryptXor(in []byte, coverage float64) (minResult []byte, minKey []byte) {
 		count := 0.0
 		for i := 0; i < keySizeFraction; i++ {
 			a := in[(i * keySize):((i + 1) * keySize)]
-			for j := i; j < keySizeFraction; j++ {
+			for j := i+1; j < keySizeFraction; j++ {
 				b := in[(j * keySize):((j + 1) * keySize)]
 				key.d += float64(hammingDistance(a, b))
 				count += 1.0
@@ -235,7 +235,7 @@ func DecryptAes(encrypted, key []byte) []byte {
 
 // 8. Detecting ECB
 
-func DetectAesEcb(input string, decode Decoder) (minResult []byte, minLine int) {
+func DetectAesEcbLine(input string, decode Decoder) (minLine, block1Start, block2Start int) {
 	for line, textLine := range strings.Split(input, "\n") {
 		textLine = strings.TrimSpace(textLine)
 
@@ -246,13 +246,15 @@ func DetectAesEcb(input string, decode Decoder) (minResult []byte, minLine int) 
 		data := decode(strings.TrimSpace(textLine))
 
 		for i := 0; i < len(data); i += 16 {
-			a := data[i:i+16]
-			for j := i; j < len(data); j += 16 {
-				b := data[j:i+16]
-
-
-				if a == b {
-					return data, line
+			for j := i+16; j < len(data); j += 16 {
+				var k int
+				for k = 0; k < 16; k++ {
+					if data[i+k] != data[j+k] {
+						break
+					}
+				}
+				if k == 16 {
+					return line, i, j
 				}
 			}
 		}

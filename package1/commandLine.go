@@ -1,45 +1,19 @@
 package package1
 
-import "os"
-import "fmt"
-import "flag"
-import "strings"
-import "bitbucket.org/jkingry/matsano/cmd"
+import (
+	"fmt"
+	"os"
+	"bitbucket.org/jkingry/matsano/cmd"
+)
 
 var Commands *cmd.Command = cmd.NewCommand("p1", "Package 1 commands")
 
-type encoding struct {
-	encode func([]byte) string
-	decode func(string) []byte
-}
-
-var encodings map[string]encoding = map[string]encoding{
-	"hex":    {HexEncodeToString, HexDecodeString},
-	"base64": {Base64EncodeToString, Base64DecodeString},
-	"ascii":  {func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }},
-}
-
-func (e *encoding) String() string {
-	for k, v := range encodings {
-		if &v == e {
-			return k
-		}
-	}
-	return ""
-}
-
-func (e *encoding) Set(value string) error {
-	for k, v := range encodings {
-		if strings.HasPrefix(k, value) {
-			*e = v
-			return nil
-		}
-	}
-
-	return fmt.Errorf("Invalid encoding: %v", value)
-}
-
 func init() {
+	var keyEncode, inEncode, outEncode encoding
+	Commands.Flags.Var(&keyEncode, "ek", "key encoding")
+	Commands.Flags.Var(&inEncode, "ei", "input encoding")
+	Commands.Flags.Var(&outEncode, "eo", "output encoding")
+
 	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
 		return func(args []string) {
 			data := decode(cmd.GetInput(args, 0))
@@ -57,73 +31,85 @@ func init() {
 		}
 	}
 
-	commonFlags := flag.NewFlagSet("common", flag.ContinueOnError)
-	p1Encode, p2Encode, poEncode := encodings["hex"], encodings["hex"], encodings["hex"]
+	setDefaultEncoding := func(in, key, out encoding) {
+		if inEncode.IsEmpty() {
+			inEncode = in
+		}
+		if keyEncode.IsEmpty() {
+			keyEncode = key
+		}
+		if outEncode.IsEmpty() {
+			outEncode = out
+		}
+	}
 
-	commonFlags.Var(&p1Encode, "e1", "parameter 1 encoding")
-	commonFlags.Var(&p2Encode, "e2", "parameter 2 encoding")
-	commonFlags.Var(&poEncode, "eo", "output encoding")
-
-	xor := Commands.Add("xor", "")
-	xor.Flags = commonFlags
+	xor := Commands.Add("xor", "[key] [input]")
 	xor.Command = func(args []string) {
-		key := p1Encode.decode(cmd.GetInput(args, 0))
-		input := p2Encode.decode(cmd.GetInput(args, 1))
-		fmt.Print(poEncode.encode(RepeatXor(key, input)))
+		setDefaultEncoding(asciiEncoding, asciiEncoding, hexEncoding)
+		key := keyEncode.decode(cmd.GetInput(args, 0))
+		input := inEncode.decode(cmd.GetInput(args, 1))
+		fmt.Print(outEncode.encode(RepeatXor(key, input)))
 	}
 
-	var coverage float64
-	decryptFlags := flag.NewFlagSet("decryptXor", flag.ContinueOnError)
-	decryptFlags.Var(&p1Encode, "e1", "parameter 1 encoding")
-	decryptFlags.Var(&poEncode, "eo", "output encoding")
-	decryptFlags.Float64Var(&coverage, "c", 0.25, "percentage coverage")
-
-	decryptXor := Commands.Add("decryptXor", "")
-	decryptXor.Flags = decryptFlags
+	decryptXor := Commands.Add("decryptXor", "[encryptedInput]")
+	coverage := decryptXor.Flags.Float64("c", 0.05, "percentage coverage")
 	decryptXor.Command = func(args []string) {
-		input := p1Encode.decode(cmd.GetInput(args, 0))
-		result, key := DecryptXor(input, coverage)
-		fmt.Fprintln(os.Stderr, "Key:", poEncode.encode(key))
-		fmt.Print(poEncode.encode(result))
+		setDefaultEncoding(base64Encoding, hexEncoding, asciiEncoding)
+		input := inEncode.decode(cmd.GetInput(args, 0))
+		result, key := DecryptXor(input, *coverage)
+		fmt.Fprintln(os.Stderr, "Key:", outEncode.encode(key))
+		fmt.Print(outEncode.encode(result))
 	}
 
-	fixedXor := Commands.Add("fixedXor", "")
-	fixedXor.Flags = commonFlags
+	fixedXor := Commands.Add("fixedXor", "[inputA] [inputB]")
 	fixedXor.Command = func(args []string) {
-		key := p1Encode.decode(cmd.GetInput(args, 0))
-		input := p2Encode.decode(cmd.GetInput(args, 1))
-		fmt.Print(poEncode.encode(FixedXor(key, input)))
+		setDefaultEncoding(hexEncoding, hexEncoding, hexEncoding)
+		key := keyEncode.decode(cmd.GetInput(args, 0))
+		input := inEncode.decode(cmd.GetInput(args, 1))
+		fmt.Print(outEncode.encode(FixedXor(key, input)))
 	}
 
-	decryptSingleXor := Commands.Add("decryptSingleXor", "")
-	decryptSingleXor.Flags = commonFlags
+	decryptSingleXor := Commands.Add("decryptSingleXor", "[encryptedInput]")
 	decryptSingleXor.Command = func(args []string) {
-		input := p1Encode.decode(cmd.GetInput(args, 0))
+		setDefaultEncoding(hexEncoding, hexEncoding, asciiEncoding)
+		input := inEncode.decode(cmd.GetInput(args, 0))
 		result, key, _ := DecryptSingleXor(input)
 
 		fmt.Fprintln(os.Stderr, "Key:", key)
 
-		fmt.Print(string(result))
+		fmt.Print(outEncode.encode(result))
 	}
 
-	detectSingleXorLine := Commands.Add("detectSingleXorLine", "")
-	detectSingleXorLine.Flags = commonFlags
+	detectSingleXorLine := Commands.Add("detectSingleXorLine", "[inputLines]")
 	detectSingleXorLine.Command = func(args []string) {
-		result, key, line := DetectSingleXorLine(cmd.GetInput(args, 0), p1Encode.decode)
+		setDefaultEncoding(hexEncoding, hexEncoding, asciiEncoding)
+		result, key, line := DetectSingleXorLine(cmd.GetInput(args, 0), inEncode.decode)
 
 		fmt.Fprintln(os.Stderr, "Key:", key, "Line:", line)
 
-		fmt.Print(poEncode.encode(result))
+		fmt.Print(outEncode.encode(result))
 	}
 
-	decryptAes := Commands.Add("decryptAes", "")
-	decryptAes.Flags = commonFlags
+	decryptAes := Commands.Add("decryptAes", "[decryptKey] [encryptedInput]")
 	decryptAes.Command = func(args []string) {
-		key := p1Encode.decode(cmd.GetInput(args, 0))
-		input := p2Encode.decode(cmd.GetInput(args, 1))
+		setDefaultEncoding(base64Encoding, asciiEncoding, asciiEncoding)
+		key := keyEncode.decode(cmd.GetInput(args, 0))
+		input := inEncode.decode(cmd.GetInput(args, 1))
 
 		result := DecryptAes(input, key)
 
-		fmt.Print(poEncode.encode(result))
+		fmt.Print(outEncode.encode(result))
+	}
+
+	detectAesLine := Commands.Add("detectAesLine", "[inputLines]")
+	detectAesLine.Command = func(args []string) {
+		setDefaultEncoding(base64Encoding, hexEncoding, hexEncoding)
+		line, block1Start, block2Start := DetectAesEcbLine(cmd.GetInput(args, 0), inEncode.decode)
+
+		if block1Start == block2Start {
+			fmt.Println("No line detected")
+		} else {
+			fmt.Printf("Found Line %v, [%v:%v] matches [%v:%v]", line, block1Start, block1Start+16, block2Start, block2Start+16)
+		}
 	}
 }

@@ -9,6 +9,7 @@ import "net/http"
 
 type Command struct {
 	Flags   *flag.FlagSet
+	Init func()
 	Command func([]string)
 
 	name     string
@@ -46,6 +47,10 @@ func (this *Command) printUsage(level int) {
 }
 
 func (this *Command) Run(args []string) {
+	if this.Init != nil {
+		this.Init()
+	}
+
 	if ok := this.Flags.Parse(args); ok != nil {
 		return
 	}
@@ -98,7 +103,7 @@ func Run() {
 
 func GetInput(args []string, index int) string {
 	var arg string
-	if len(args) < index {
+	if len(args) <= index {
 		arg = "stdin"
 	} else {
 		arg = args[index]

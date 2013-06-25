@@ -49,7 +49,7 @@ func Test_Question3_DecryptSingleXor(t *testing.T) {
 
 // 4. Detect single-character Xor
 
-func Test_Question4_DetectXorCypher(t *testing.T) {
+func Test_Question4_DetectSingleXorLine(t *testing.T) {
 	const in, out = "gistfile1.txt", "Now that the party is jumping\n"
 	fs, _ := os.Open(in)
 	defer fs.Close()
@@ -114,5 +114,19 @@ func Test_Question7_DecryptAesEcb(t *testing.T) {
 
 	if !strings.HasPrefix(string(result), "I'm back and I'm ringin' the bell") {
 		t.Errorf("DecryptAes failed")
+	}
+}
+
+func Test_Question8_DetectAesEcbLine(t *testing.T) {
+	const in, out = "gistfile4.txt", 132
+	fs, _ := os.Open(in)
+	defer fs.Close()
+
+	data, _ := ioutil.ReadAll(fs)
+
+	line, _, _ := DetectAesEcbLine(string(data), Base64DecodeString)
+
+	if line != out {
+		t.Errorf("DetectAesEcbLine(%#v) = %#v want %#v", in, line, out)
 	}
 }

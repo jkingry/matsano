@@ -181,19 +181,18 @@ func (h Histogram) Normalize() {
 var Commands *cmd.Command = cmd.NewCommand("histogram", "histogram commands")
 
 func init() {
-	create := Commands.Add("create", "create histogram")
+	create := Commands.Add("create", "[input]...")
 	create.Command = func(args []string) {
 		h := Make()
 		for i := 0; i < len(args); i++ {
 			hf := New([]byte(cmd.GetInput(args, i)))
-
 			h.Add(hf)
 		}
 
 		fmt.Print(h)
 	}
 
-	norm := Commands.Add("normalize", "normalize histogram")
+	norm := Commands.Add("normalize", "normalize histogram (from standard input)")
 	norm.Command = func(args []string) {
 		h := Make()
 		if n, e := fmt.Scan(&h); n != 1 {
@@ -206,7 +205,7 @@ func init() {
 		fmt.Print(h)
 	}
 
-	gofmt := Commands.Add("goFormat", "histogram go format")
+	gofmt := Commands.Add("goFormat", "format histogram (from standard input) as GO structure")
 	gofmt.Command = func(args []string) {
 		h := Make()
 		if n, e := fmt.Scan(&h); n != 1 {
@@ -216,6 +215,6 @@ func init() {
 
 		m := map[byte]float64(h)
 
-		fmt.Printf("%#v", m)
+		fmt.Printf("histogram.Histogram(%#v)", m)
 	}
 }
