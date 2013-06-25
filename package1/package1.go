@@ -232,3 +232,31 @@ func DecryptAes(encrypted, key []byte) []byte {
 
 	return decrypted
 }
+
+// 8. Detecting ECB
+
+func DetectAesEcb(input string, decode Decoder) (minResult []byte, minLine int) {
+	for line, textLine := range strings.Split(input, "\n") {
+		textLine = strings.TrimSpace(textLine)
+
+		if len(textLine) == 0 {
+			continue
+		}
+
+		data := decode(strings.TrimSpace(textLine))
+
+		for i := 0; i < len(data); i += 16 {
+			a := data[i:i+16]
+			for j := i; j < len(data); j += 16 {
+				b := data[j:i+16]
+
+
+				if a == b {
+					return data, line
+				}
+			}
+		}
+	}
+
+	return
+}
