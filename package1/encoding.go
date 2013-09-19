@@ -6,27 +6,27 @@ import (
 )
 
 
-type encoding struct {
-	encode func([]byte) string
-	decode func(string) []byte
+type Encoding struct {
+	Encode func([]byte) string
+	Decode func(string) []byte
 }
 
-var hexEncoding encoding = encoding{HexEncodeToString, HexDecodeString}
-var base64Encoding encoding = encoding{Base64EncodeToString, Base64DecodeString}
-var asciiEncoding encoding = encoding{func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }}
+var HexEncoding Encoding = Encoding{HexEncodeToString, HexDecodeString}
+var Base64Encoding Encoding = Encoding{Base64EncodeToString, Base64DecodeString}
+var AsciiEncoding Encoding = Encoding{func(b []byte) string { return string(b) }, func(s string) []byte { return []byte(s) }}
 
-var encodings map[string]encoding = map[string]encoding{
-	"hex":    hexEncoding,
-	"base64": base64Encoding,
-	"ascii":  asciiEncoding,
+var Encodings map[string]Encoding = map[string]Encoding{
+	"hex":    HexEncoding,
+	"base64": Base64Encoding,
+	"ascii":  AsciiEncoding,
 }
 
-func (e *encoding) IsEmpty() bool {
-	return e.encode == nil || e.decode == nil
+func (e *Encoding) IsEmpty() bool {
+	return e.Encode == nil || e.Decode == nil
 }
 
-func (e *encoding) String() string {
-	for k, v := range encodings {
+func (e *Encoding) String() string {
+	for k, v := range Encodings {
 		if &v == e {
 			return k
 		}
@@ -34,8 +34,8 @@ func (e *encoding) String() string {
 	return ""
 }
 
-func (e *encoding) Set(value string) error {
-	for k, v := range encodings {
+func (e *Encoding) Set(value string) error {
+	for k, v := range Encodings {
 		if strings.HasPrefix(k, value) {
 			*e = v
 			return nil

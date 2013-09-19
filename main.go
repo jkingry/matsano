@@ -11,10 +11,12 @@ import (
 	"bitbucket.org/jkingry/matsano/cmd"
 	"bitbucket.org/jkingry/matsano/histogram"
 	"bitbucket.org/jkingry/matsano/package1"
+	"bitbucket.org/jkingry/matsano/package2"
 )
 
 func main() {
 	cmd.AddCommand(package1.Commands)
+	cmd.AddCommand(package2.Commands)
 	cmd.AddCommand(histogram.Commands)
 	cmd.Run()
 }

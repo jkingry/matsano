@@ -1,10 +1,12 @@
 package package1
 
-import "testing"
-import "io/ioutil"
-import "os"
-import "strconv"
-import "strings"
+import (
+	"testing"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+)
 
 // 1. Convert hex to base64 and back.
 
