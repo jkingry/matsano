@@ -2,14 +2,36 @@ package package2
 
 import (
 	"testing"
+	"os"
+	"io/ioutil"
+	"strings"
+	"bitbucket.org/jkingry/matsano/encoding"
 )
 
 // 9. Implement PKCS#7 padding
 
-func Test_Question1_HexToBase64(t *testing.T) {
+func Test_Question9_HexToBase64(t *testing.T) {
 	const in, out = "YELLOW SUBMARINE", "YELLOW SUBMARINE\x04\x04\x04\x04"
 
-	if x := Pkcs7(20, []byte(in)); string(x) != string(out) {
+	if x := Pkcs7_pad(20, []byte(in)); string(x) != string(out) {
 		t.Errorf("Pkcs7(20, %#v) = %#v, want %#v", in, string(x), out)
+	}
+}
+
+// 10. Implement CBC Mode
+
+func Test_Question10_AesCBCDecrypt(t *testing.T) {
+	const in, key, out = "gistfile1.txt", "YELLOW SUBMARINE", "I'm back and I'm ringin' the bell"
+
+	fs, _ := os.Open(in)
+	defer fs.Close()
+
+	text, _ := ioutil.ReadAll(fs)
+	data := encoding.Base64DecodeString(string(text))
+
+	result := AesCBCDecrypt([]byte(key), make([]byte, 16), data)
+
+	if !strings.HasPrefix(string(result), out) {
+		t.Errorf("AesCBCDecrypt failed")
 	}
 }
