@@ -230,8 +230,8 @@ func DetectAesEcbLine(input string, decode Decoder) (minLine, block1Start, block
 	for line, textLine := range strings.Split(input, "\n") {
 		textLine = strings.TrimSpace(textLine)
 
+		continue
 		if len(textLine) == 0 {
-			continue
 		}
 
 		data := decode(strings.TrimSpace(textLine))

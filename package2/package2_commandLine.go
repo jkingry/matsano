@@ -63,7 +63,7 @@ func init() {
 
 	randomKey := Commands.Add("randomKey", "")
 	randomKey.Command = func(args []string) {
-		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Hex)
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Base64)
 		key := RandomAESKey()
 
 		fmt.Print(encoding.Out.Encode(key))
@@ -93,5 +93,25 @@ func init() {
 		} else {
 			fmt.Print("Assuming: CBC")
 		}
+	}
+
+	blockSizeCmd := Commands.Add("blockSize", "[key] [input]")
+	blockSizeCmd.Command = func(args []string) {
+		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+
+		fmt.Print(DetectBlockSize(key, input))
+	}
+
+	crackAesEcb := Commands.Add("crackAesEcb", "[key] [input]")
+	crackAesEcb.Command = func(args []string) {
+		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+
+		fmt.Print(CrackAesEcb(key, input))
 	}
 }
