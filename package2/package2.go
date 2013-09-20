@@ -185,11 +185,19 @@ func AesRandomEncrypt(in []byte) []byte {
 
 	mode := mrand.Intn(2)
 
+	prefix := 5 + mrand.Intn(5)
+	suffix := 5 + mrand.Intn(5)
+
+	result := make([]byte, prefix + len(in) + suffix)
+	io.ReadFull(rand.Reader, result[0:prefix])
+ 	copy(result[prefix:prefix + len(in)], in)
+	io.ReadFull(rand.Reader, result[prefix + len(in):])
+
 	if mode == 0 {
 	   iv := RandomAESKey()
-	   return AesCBCEncrypt(key, iv, in)
+	   return AesCBCEncrypt(key, iv, result)
 	} else {
-	   return AesECBEncrypt(key, in)
+	   return AesECBEncrypt(key, result)
 	}
 }
 
