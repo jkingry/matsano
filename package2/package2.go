@@ -4,6 +4,9 @@ import (
 	"crypto/aes"
 	"crypto/rand"
 	"io"
+	"fmt"
+	"os"
+	"time"
 	"bitbucket.org/jkingry/matsano/package1"
 	mrand "math/rand"
 )
@@ -182,7 +185,7 @@ func RandomAESKey() []byte {
 
 func AesRandomEncrypt(in []byte) []byte {
 	key := RandomAESKey()
-
+	mrand.Seed(time.Now().UnixNano())
 	mode := mrand.Intn(2)
 
 	prefix := 5 + mrand.Intn(5)
@@ -194,9 +197,11 @@ func AesRandomEncrypt(in []byte) []byte {
 	io.ReadFull(rand.Reader, result[prefix + len(in):])
 
 	if mode == 0 {
+	   fmt.Fprintln(os.Stderr, "Using: CBC")
 	   iv := RandomAESKey()
 	   return AesCBCEncrypt(key, iv, result)
 	} else {
+	   fmt.Fprintln(os.Stderr, "Using: ECB")
 	   return AesECBEncrypt(key, result)
 	}
 }

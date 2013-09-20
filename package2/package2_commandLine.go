@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"bitbucket.org/jkingry/matsano/cmd"
 	"bitbucket.org/jkingry/matsano/encoding"
+	"bitbucket.org/jkingry/matsano/package1"
 )
 
 var Commands *cmd.Command = cmd.NewCommand("p2", "Package 2 commands")
@@ -77,5 +78,20 @@ func init() {
 		result := AesRandomEncrypt(input)
 
 		fmt.Print(encoding.Out.Encode(result))
+	}
+
+	blockMode := Commands.Add("blockMode", "[input]")
+	blockMode.Command = func(args []string) {
+		encoding.SetDefault(encoding.Base64, encoding.Ascii, encoding.Ascii)
+
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
+
+		isEcb, _, _ := package1.DetectAesEcb(input)
+
+		if isEcb {
+			fmt.Print("Detected: ECB")
+		} else {
+			fmt.Print("Assuming: CBC")
+		}
 	}
 }
