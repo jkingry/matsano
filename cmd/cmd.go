@@ -97,6 +97,10 @@ func AddCommand(c *Command) {
 	rootCommands.AddCommand(c)
 }
 
+func Flags() *flag.FlagSet {
+	return rootCommands.Flags
+}
+
 func Run() {
 	rootCommands.Run(os.Args[1:])
 }

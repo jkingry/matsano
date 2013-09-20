@@ -3,39 +3,13 @@ package package1
 import (
 	"bitbucket.org/jkingry/matsano/histogram"
 	"crypto/aes"
-	"encoding/base64"
-	"encoding/hex"
 	"math"
 	"strings"
 )
 
 // 1. Convert hex to base64 and back.
 
-func HexDecodeString(s string) []byte {
-	d, err := hex.DecodeString(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return d
-}
-
-func HexEncodeToString(src []byte) string {
-	return hex.EncodeToString(src)
-}
-
-func Base64DecodeString(s string) []byte {
-	d, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return d
-}
-
-func Base64EncodeToString(src []byte) string {
-	return base64.StdEncoding.EncodeToString(src)
-}
+// see encoding/encoding.go
 
 // 2. Fixed Xor
 

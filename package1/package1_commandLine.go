@@ -4,16 +4,12 @@ import (
 	"fmt"
 	"os"
 	"bitbucket.org/jkingry/matsano/cmd"
+	"bitbucket.org/jkingry/matsano/encoding"
 )
 
 var Commands *cmd.Command = cmd.NewCommand("p1", "Package 1 commands")
 
 func init() {
-	var keyEncode, inEncode, outEncode Encoding
-	Commands.Flags.Var(&keyEncode, "ek", "key encoding")
-	Commands.Flags.Var(&inEncode, "ei", "input encoding")
-	Commands.Flags.Var(&outEncode, "eo", "output encoding")
-
 	translate := func(decode func(string) []byte, encode func([]byte) string) func([]string) {
 		return func(args []string) {
 			data := decode(cmd.GetInput(args, 0))
@@ -21,9 +17,9 @@ func init() {
 		}
 	}
 
-	for inputName, inputEncoding := range Encodings {
+	for inputName, inputEncoding := range encoding.Encodings {
 		translateCommand := Commands.Add(inputName, "Translate from "+inputName)
-		for outputName, outputEncoding := range Encodings {
+		for outputName, outputEncoding := range encoding.Encodings {
 			if outputName == inputName {
 				continue
 			}
@@ -31,80 +27,68 @@ func init() {
 		}
 	}
 
-	setDefaultEncoding := func(in, key, out Encoding) {
-		if inEncode.IsEmpty() {
-			inEncode = in
-		}
-		if keyEncode.IsEmpty() {
-			keyEncode = key
-		}
-		if outEncode.IsEmpty() {
-			outEncode = out
-		}
-	}
-
 	xor := Commands.Add("xor", "[key] [input]")
 	xor.Command = func(args []string) {
-		setDefaultEncoding(AsciiEncoding, AsciiEncoding, HexEncoding)
-		key := keyEncode.Decode(cmd.GetInput(args, 0))
-		input := inEncode.Decode(cmd.GetInput(args, 1))
-		fmt.Print(outEncode.Encode(RepeatXor(key, input)))
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Hex)
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+		fmt.Print(encoding.Out.Encode(RepeatXor(key, input)))
 	}
 
 	decryptXor := Commands.Add("decryptXor", "[encryptedInput]")
 	coverage := decryptXor.Flags.Float64("c", 0.05, "percentage coverage")
 	decryptXor.Command = func(args []string) {
-		setDefaultEncoding(Base64Encoding, HexEncoding, AsciiEncoding)
-		input := inEncode.Decode(cmd.GetInput(args, 0))
+		encoding.SetDefault(encoding.Base64, encoding.Hex, encoding.Ascii)
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
 		result, key := DecryptXor(input, *coverage)
-		fmt.Fprintln(os.Stderr, "Key:", outEncode.Encode(key))
-		fmt.Print(outEncode.Encode(result))
+		fmt.Fprintln(os.Stderr, "Key:", encoding.Out.Encode(key))
+		fmt.Print(encoding.Out.Encode(result))
 	}
 
 	fixedXor := Commands.Add("fixedXor", "[inputA] [inputB]")
 	fixedXor.Command = func(args []string) {
-		setDefaultEncoding(HexEncoding, HexEncoding, HexEncoding)
-		key := keyEncode.Decode(cmd.GetInput(args, 0))
-		input := inEncode.Decode(cmd.GetInput(args, 1))
-		fmt.Print(outEncode.Encode(FixedXor(key, input)))
+		encoding.SetDefault(encoding.Hex, encoding.Hex, encoding.Hex)
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+		fmt.Print(encoding.Out.Encode(FixedXor(key, input)))
 	}
 
 	decryptSingleXor := Commands.Add("decryptSingleXor", "[encryptedInput]")
 	decryptSingleXor.Command = func(args []string) {
-		setDefaultEncoding(HexEncoding, HexEncoding, AsciiEncoding)
-		input := inEncode.Decode(cmd.GetInput(args, 0))
+		encoding.SetDefault(encoding.Hex, encoding.Hex, encoding.Ascii)
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
 		result, key, _ := DecryptSingleXor(input)
 
 		fmt.Fprintln(os.Stderr, "Key:", key)
 
-		fmt.Print(outEncode.Encode(result))
+		fmt.Print(encoding.Out.Encode(result))
 	}
 
 	detectSingleXorLine := Commands.Add("detectSingleXorLine", "[inputLines]")
 	detectSingleXorLine.Command = func(args []string) {
-		setDefaultEncoding(HexEncoding, HexEncoding, AsciiEncoding)
-		result, key, line := DetectSingleXorLine(cmd.GetInput(args, 0), inEncode.Decode)
+		encoding.SetDefault(encoding.Hex, encoding.Hex, encoding.Ascii)
+		result, key, line := DetectSingleXorLine(cmd.GetInput(args, 0), encoding.In.Decode)
 
 		fmt.Fprintln(os.Stderr, "Key:", key, "Line:", line)
 
-		fmt.Print(outEncode.Encode(result))
+		fmt.Print(encoding.Out.Encode(result))
 	}
 
 	decryptAes := Commands.Add("decryptAes", "[decryptKey] [encryptedInput]")
 	decryptAes.Command = func(args []string) {
-		setDefaultEncoding(Base64Encoding, AsciiEncoding, AsciiEncoding)
-		key := keyEncode.Decode(cmd.GetInput(args, 0))
-		input := inEncode.Decode(cmd.GetInput(args, 1))
+		encoding.SetDefault(encoding.Base64, encoding.Ascii, encoding.Ascii)
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
 
 		result := DecryptAes(input, key)
 
-		fmt.Print(outEncode.Encode(result))
+		fmt.Print(encoding.Out.Encode(result))
 	}
 
 	detectAesLine := Commands.Add("detectAesLine", "[inputLines]")
 	detectAesLine.Command = func(args []string) {
-		setDefaultEncoding(Base64Encoding, HexEncoding, HexEncoding)
-		line, block1Start, block2Start := DetectAesEcbLine(cmd.GetInput(args, 0), inEncode.Decode)
+		encoding.SetDefault(encoding.Base64, encoding.Hex, encoding.Hex)
+		line, block1Start, block2Start := DetectAesEcbLine(cmd.GetInput(args, 0), encoding.In.Decode)
 
 		if block1Start == block2Start {
 			fmt.Println("No line detected")
