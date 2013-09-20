@@ -208,6 +208,23 @@ func DecryptAes(encrypted, key []byte) []byte {
 }
 
 // 8. Detecting ECB
+func DetectAesEcb(data []byte) (found bool, block1Start, block2Start int)  {
+	for i := 0; i < len(data); i += 16 {
+		for j := i+16; j < len(data); j += 16 {
+			var k int
+			for k = 0; k < 16; k++ {
+				if data[i+k] != data[j+k] {
+					break
+				}
+			}
+			if k == 16 {
+				return true, i, j
+			}
+		}
+	}
+
+	return
+}
 
 func DetectAesEcbLine(input string, decode Decoder) (minLine, block1Start, block2Start int) {
 	for line, textLine := range strings.Split(input, "\n") {
@@ -219,18 +236,9 @@ func DetectAesEcbLine(input string, decode Decoder) (minLine, block1Start, block
 
 		data := decode(strings.TrimSpace(textLine))
 
-		for i := 0; i < len(data); i += 16 {
-			for j := i+16; j < len(data); j += 16 {
-				var k int
-				for k = 0; k < 16; k++ {
-					if data[i+k] != data[j+k] {
-						break
-					}
-				}
-				if k == 16 {
-					return line, i, j
-				}
-			}
+		found, block1Start, block2Start := DetectAesEcb(data)
+		if found {
+			return line, block1Start, block2Start
 		}
 	}
 

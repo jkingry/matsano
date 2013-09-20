@@ -59,4 +59,23 @@ func init() {
 
 		fmt.Print(encoding.Out.Encode(AesCBCDecrypt(key, iv, input)))
 	}
+
+	randomKey := Commands.Add("randomKey", "")
+	randomKey.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Hex)
+		key := RandomAESKey()
+
+		fmt.Print(encoding.Out.Encode(key))
+	}
+
+	randomEncrypt := Commands.Add("randomEncrypt", "[input]")
+	randomEncrypt.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Base64)
+
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
+
+		result := AesRandomEncrypt(input)
+
+		fmt.Print(encoding.Out.Encode(result))
+	}
 }
