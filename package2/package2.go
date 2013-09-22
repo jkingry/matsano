@@ -294,28 +294,36 @@ f. Repeat for the next byte.
 func CrackAesEcb(oracle oracleFunc) []byte {
 	blockSize := DetectBlockSize(oracle)
 
-	cracked := make([]byte, blockSize)
+	offset := make([][]byte, blockSize)
+	offset[0] = oracle([]byte{})
 
-	for c := 0; c < blockSize; c++ {
-		target := bytes.Repeat([]byte{42}, blockSize - (c + 1))
+	cracked :=  make([]byte, blockSize + len(offset[0]) - 1)
+	copy(cracked, bytes.Repeat([]byte{42}, blockSize - 1))
 
-		result := oracle(target)[:blockSize]
+	for o := 1; o < blockSize; o++ {
+		offset[o] = oracle(cracked[:o])
+	}
 
-		target = append(target, cracked[:c]...)
-		target = append(target, 0)
-	
+
+	for c := 0; c < len(cracked) - (blockSize - 1); c++ {
+		g := c + (blockSize - 1)
+		blockStart := (c / blockSize) * blockSize
+		blockEnd := blockStart + blockSize
+		o := blockEnd - c - 1
+
+		//fmt.Printf("c:%v, g:%v, bs:%v, be:%v, o:%v\n", c, g, blockStart, blockEnd, o)
+
 		for b := 0; b < 256; b++ {
-			target[blockSize - 1] = byte(b)
+			cracked[g] = byte(b)
 
-			block := oracle(target)[:blockSize]
+			result := oracle(cracked[c:g+1])[:blockSize]
 
-			if bytes.Equal(result, block) {
-				cracked[c] = byte(b)
+			if bytes.Equal(result, offset[o][blockStart:blockEnd]) {
 				break
 			}
 		}
 	}
 
-	return cracked
+	return cracked[blockSize -1:]
 }
 
