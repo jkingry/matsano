@@ -4,10 +4,10 @@ import (
 	"crypto/aes"
 	"crypto/rand"
 	"io"
-	"fmt"
 	"os"
 	"time"
 	"bytes"
+	"fmt"
 	"bitbucket.org/jkingry/matsano/package1"
 	mrand "math/rand"
 )
@@ -252,25 +252,21 @@ func CreateOracle(input []byte) oracleFunc {
 		copy(target[:len(prefix)], prefix)
 		copy(target[len(prefix):], input)
 
-		return AesECBEncrypt(key, target)
+		result:= AesECBEncrypt(key, target)
+		return result
 	}
 }
 
 func DetectBlockSize(oracle oracleFunc) int {
 	initial := oracle([]byte{})
 
-	for a := 1; a < 128; a++ {
+	for a := 1; a < len(initial); a++ {
 		prefix := bytes.Repeat([]byte{42}, a)
 		result := oracle(prefix)
 
-		encrypted := AesECBEncrypt(key, target)
-
-		b := detectBlock(encrypted)
-		if b > 0 && b == lastBlock {
-			return b
+		if bytes.Equal(initial[0:a], result[a:a+a]) {
+			return a
 		}
-
-		lastBlock = b
 	}
 
 	return 0
@@ -295,31 +291,31 @@ unknown-string.
 f. Repeat for the next byte.
  */
 
-func CrackAesEcb(key, input []byte) byte {
-	blockSize := DetectBlockSize(key, input)
+func CrackAesEcb(oracle oracleFunc) []byte {
+	blockSize := DetectBlockSize(oracle)
 
-	fmt.Println(blockSize)
+	cracked := make([]byte, blockSize)
 
-	shortTarget := append(input, bytes.Repeat([]byte("A"), blockSize - 1)...)
+	for c := 0; c < blockSize; c++ {
+		target := bytes.Repeat([]byte{42}, blockSize - (c + 1))
 
-	fmt.Println(len(shortTarget))
+		result := oracle(target)[:blockSize]
 
-	short := AesECBEncrypt(key, shortTarget)[:blockSize]
+		target = append(target, cracked[:c]...)
+		target = append(target, 0)
+	
+		for b := 0; b < 256; b++ {
+			target[blockSize - 1] = byte(b)
 
-	for b := byte(0); b <= 255; b++ {
-		target := make([]byte, len(shortTarget) + 1)
-		copy(target, short)
-		target[len(target) - 1] = b
+			block := oracle(target)[:blockSize]
 
-		fmt.Println(len(target))
-
-		result := AesECBEncrypt(key, shortTarget)[:blockSize]
-
-		if bytes.Equal(short, result) {
-			return b
+			if bytes.Equal(result, block) {
+				cracked[c] = byte(b)
+				break
+			}
 		}
 	}
 
-	return byte(0)
+	return cracked
 }
 

@@ -95,23 +95,36 @@ func init() {
 		}
 	}
 
+	ecbEncrypt := Commands.Add("ecbEncrypt", "[key] [input]")
+	ecbEncrypt.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Hex)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+
+		input := encoding.In.Decode(cmd.GetInput(args, 1))	
+
+		fmt.Print(encoding.Out.Encode(AesECBEncrypt(key, input)))
+	}		
+
 	blockSizeCmd := Commands.Add("blockSize", "[key] [input]")
 	blockSizeCmd.Command = func(args []string) {
 		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
 
-		key := encoding.Key.Decode(cmd.GetInput(args, 0))
-		input := encoding.In.Decode(cmd.GetInput(args, 1))
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
 
-		fmt.Print(DetectBlockSize(key, input))
+		oracle := CreateOracle(input)
+
+		fmt.Print(DetectBlockSize(oracle))
 	}
 
 	crackAesEcb := Commands.Add("crackAesEcb", "[key] [input]")
 	crackAesEcb.Command = func(args []string) {
 		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
 
-		key := encoding.Key.Decode(cmd.GetInput(args, 0))
-		input := encoding.In.Decode(cmd.GetInput(args, 1))
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
 
-		fmt.Print(CrackAesEcb(key, input))
+		oracle := CreateOracle(input)
+
+		fmt.Print(encoding.Out.Encode(CrackAesEcb(oracle)))
 	}
 }
