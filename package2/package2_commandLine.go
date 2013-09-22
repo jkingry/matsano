@@ -75,7 +75,7 @@ func init() {
 
 		input := encoding.In.Decode(cmd.GetInput(args, 0))
 
-		result := AesRandomEncrypt(input)
+		result, _ := AesRandomEncrypt(input)
 
 		fmt.Print(encoding.Out.Encode(result))
 	}
