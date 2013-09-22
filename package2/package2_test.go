@@ -3,9 +3,11 @@ package package2
 import (
 	"testing"
 	"os"
+	"bytes"
 	"io/ioutil"
 	"strings"
 	"bitbucket.org/jkingry/matsano/encoding"
+	"bitbucket.org/jkingry/matsano/package1"
 )
 
 // 9. Implement PKCS#7 padding
@@ -33,5 +35,19 @@ func Test_Question10_AesCBCDecrypt(t *testing.T) {
 
 	if !strings.HasPrefix(string(result), out) {
 		t.Errorf("AesCBCDecrypt failed")
+	}
+}
+
+
+// 11. Write an oracle function and use it to detect ECB.
+func Test_Question12_DetectECB(t *testing.T) {
+	in := bytes.Repeat([]byte("The quick brown fox jumped over the laxy dog."), 20)
+	
+	for i:=0; i < 16; i++ {
+		encrypted := AesRandomEncrypt(in)
+		isEcb, _, _ := package1.DetectAesEcb(encrypted)
+		if !((isEcb && mode == 1) || (!isEcb && mode == 0)) {
+			t.Errorf("DetectECB failed")	
+		}
 	}
 }

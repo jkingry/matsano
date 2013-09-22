@@ -184,13 +184,16 @@ func RandomAESKey() []byte {
 	return key
 }
 
+var mode int
+
+var r *mrand.Rand = mrand.New(mrand.NewSource(time.Now().UnixNano()))
+
 func AesRandomEncrypt(in []byte) []byte {
 	key := RandomAESKey()
-	mrand.Seed(time.Now().UnixNano())
-	mode := mrand.Intn(2)
+	mode = r.Intn(2)
 
-	prefix := 5 + mrand.Intn(5)
-	suffix := 5 + mrand.Intn(5)
+	prefix := 5 + r.Intn(5)
+	suffix := 5 + r.Intn(5)
 
 	result := make([]byte, prefix + len(in) + suffix)
 	io.ReadFull(rand.Reader, result[0:prefix])
@@ -297,15 +300,20 @@ func CrackAesEcb(oracle oracleFunc) []byte {
 	offset := make([][]byte, blockSize)
 	offset[0] = oracle([]byte{})
 
-	cracked :=  make([]byte, blockSize + len(offset[0]) - 1)
-	copy(cracked, bytes.Repeat([]byte{42}, blockSize - 1))
+	work :=  make([]byte, blockSize + len(offset[0]) - 1)
+	copy(work, bytes.Repeat([]byte{42}, blockSize - 1))
+
+	actualLength := len(offset[0])
 
 	for o := 1; o < blockSize; o++ {
-		offset[o] = oracle(cracked[:o])
+		offset[o] = oracle(work[:o])
+		if len(offset[o]) > len(offset[o-1]) {
+			actualLength = len(offset[o-1]) - o + 1 			
+		}
 	}
 
 
-	for c := 0; c < len(cracked) - (blockSize - 1); c++ {
+	for c := 0; c < actualLength; c++ {
 		g := c + (blockSize - 1)
 		blockStart := (c / blockSize) * blockSize
 		blockEnd := blockStart + blockSize
@@ -314,9 +322,9 @@ func CrackAesEcb(oracle oracleFunc) []byte {
 		//fmt.Printf("c:%v, g:%v, bs:%v, be:%v, o:%v\n", c, g, blockStart, blockEnd, o)
 
 		for b := 0; b < 256; b++ {
-			cracked[g] = byte(b)
+			work[g] = byte(b)
 
-			result := oracle(cracked[c:g+1])[:blockSize]
+			result := oracle(work[c:g+1])[:blockSize]
 
 			if bytes.Equal(result, offset[o][blockStart:blockEnd]) {
 				break
@@ -324,6 +332,6 @@ func CrackAesEcb(oracle oracleFunc) []byte {
 		}
 	}
 
-	return cracked[blockSize -1:]
+	return work[blockSize - 1:][:actualLength]
 }
 
