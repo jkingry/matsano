@@ -127,4 +127,12 @@ func init() {
 
 		fmt.Print(encoding.Out.Encode(CrackAesEcb(oracle)))
 	}
+
+	profileFor := Commands.Add("profileFor", "{email]")
+	profileFor.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Ascii)
+
+		fmt.Print(ProfileFor(cmd.GetInput(args,0)))
+	
+	}
 }

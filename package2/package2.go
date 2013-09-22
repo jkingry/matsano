@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 	"bytes"
+	"net/url"
 	"bitbucket.org/jkingry/matsano/package1"
 	mrand "math/rand"
 )
@@ -347,7 +348,31 @@ and produce:
   }
 
 (you know, the object; I don't care if you convert it to JSON).
+*/
 
+type Profile map[string]string
+
+func ParseProfile(input string) Profile {
+	r := make(map[string]string)
+
+	q, _ := url.ParseQuery(input)
+
+	for k,v := range q {
+		r[k] = v[0]
+	}
+
+	return r
+}
+
+func (p Profile) String() string {
+	u := url.Values{}
+	for k, v := range p {
+		u.Add(k, v)
+	}
+	return u.Encode()
+}
+
+/*
 Now write a function that encodes a user profile in that format, given
 an email address. You should have something like:
 
@@ -368,7 +393,18 @@ encoded as:
 Your "profile_for" function should NOT allow encoding metacharacters
 (& and =). Eat them, quote them, whatever you want to do, but don't
 let people set their email address to "foo@bar.com&role=admin".
+*/
 
+func ProfileFor(email string) Profile {
+	p := Profile{}
+	p["email"] = email
+	p["uid"] = "10"
+	p["role"] = "user"
+
+	return p
+}
+
+/*
 Now, two more easy functions. Generate a random AES key, then:
 
  (a) Encrypt the encoded user profile under the key; "provide" that
@@ -383,3 +419,22 @@ profile.
 
 */
 
+type profileEncode func(string)[]byte
+type profleDecode func([]byte)Profile
+
+func CreateProfileOracle() (profileEncode, profleDecode) {
+	key := RandomAESKey()
+
+	pe := func(email string) []byte {
+		p := ProfileFor(email)
+		return AesECBEncrypt(key, []byte(p.String())) 
+	}
+
+
+	pd := func(data []byte) Profile {
+		s := package1.DecryptAes(key, data)
+		return ParseProfile(string(s))
+	}
+
+	return pe, pd
+}
