@@ -117,7 +117,7 @@ func init() {
 		fmt.Print(DetectBlockSize(oracle))
 	}
 
-	crackAesEcb := Commands.Add("crackAesEcb", "[key] [input]")
+	crackAesEcb := Commands.Add("crackAesEcb", "[input]")
 	crackAesEcb.Command = func(args []string) {
 		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
 
@@ -168,5 +168,18 @@ func init() {
 		pe, _ := CreateProfileOracle(key)
 
 		fmt.Print(encoding.Out.Encode(CrackProfile(pe, string(input))))
+	}
+
+	var prefixLength int
+	crackAesEcbPrefix := Commands.Add("crackAesEcbPrefix", "[input]")
+	crackAesEcbPrefix.Flags.IntVar(&prefixLength, "prefixLength", 32, "random prefix length")
+	crackAesEcbPrefix.Command = func(args []string) {
+		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
+
+		input := encoding.In.Decode(cmd.GetInput(args, 0))
+
+		oracle := CreateOracleWithPrefix(prefixLength, nil, input)
+
+		fmt.Print(encoding.Out.Encode(CrackAesEcbWithPrefix(oracle)))
 	}
 }
