@@ -38,7 +38,6 @@ func Test_Question10_AesCBCDecrypt(t *testing.T) {
 	}
 }
 
-
 // 11. Write an oracle function and use it to detect ECB.
 
 func Test_Question11_DetectECB(t *testing.T) {
@@ -54,6 +53,7 @@ func Test_Question11_DetectECB(t *testing.T) {
 }
 
 // 12. Byte-at-a-time ECB decryption, Full control version
+
 func Test_Question12_AesCBCDecrypt(t *testing.T) {
 	const in = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 	const out = "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
@@ -66,5 +66,21 @@ func Test_Question12_AesCBCDecrypt(t *testing.T) {
 
 	if string(result) != out {
 		t.Errorf("CrackAesEcb(data) = %#v, expected %#v", string(result), out)
+	}
+}
+
+// 13. ECB cut-and-paste
+
+func Test_Question13_CrackProfile(t *testing.T) {
+	const role = "admin"
+
+	pe, pd := CreateProfileOracle(nil)
+
+	encryptedRole := CrackProfile(pe, role)
+
+	roleProfile := pd(encryptedRole)
+
+	if roleProfile.role != role {
+		t.Errorf("CrackProfile(...) = %#v, expected %#v", roleProfile.role, role)
 	}
 }

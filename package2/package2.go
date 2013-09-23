@@ -6,7 +6,8 @@ import (
 	"io"
 	"time"
 	"bytes"
-	"net/url"
+	"strings"
+	"strconv"
 	"bitbucket.org/jkingry/matsano/package1"
 	mrand "math/rand"
 )
@@ -94,6 +95,25 @@ func AesECBEncrypt(key, decrypted []byte) []byte {
 	}
 
 	return encrypted
+}
+
+func AesECBDecrypt(key, encrypted []byte) []byte {
+	key = Pkcs7_pad(aes.BlockSize, key)
+
+	cipher, _ := aes.NewCipher(key)
+
+	decrypted := make([]byte, len(encrypted))
+
+	for i := 0; i < len(decrypted); i += cipher.BlockSize() {
+		e := i + cipher.BlockSize()
+
+		eblock := encrypted[i:e]
+		dblock := decrypted[i:e]
+
+		cipher.Decrypt(dblock, eblock)
+	}
+
+	return Pkcs7_unpad(decrypted)
 }
 
 func AesCBCEncrypt(key, iv, decrypted []byte) []byte {
@@ -259,7 +279,7 @@ func DetectBlockSize(oracle oracleFunc) int {
 	initial := oracle([]byte{})
 
 	for a := 1; a < len(initial); a++ {
-		prefix := bytes.Repeat([]byte{42}, a)
+		prefix := bytes.Repeat([]byte("A"), a)
 		result := oracle(prefix)
 
 		if bytes.Equal(initial[0:a], result[a:a+a]) {
@@ -296,7 +316,7 @@ func CrackAesEcb(oracle oracleFunc) []byte {
 	offset[0] = oracle([]byte{})
 
 	work :=  make([]byte, blockSize + len(offset[0]) - 1)
-	copy(work, bytes.Repeat([]byte{42}, blockSize - 1))
+	copy(work, bytes.Repeat([]byte("A"), blockSize - 1))
 
 	actualLength := len(offset[0])
 
@@ -350,26 +370,34 @@ and produce:
 (you know, the object; I don't care if you convert it to JSON).
 */
 
-type Profile map[string]string
+// Initially I used url.Values, but since it is stricter it seemed to make this question to complicated. Specifically:
+//  - it didn't keep the key order (so 'role=' ended up in the middle)
+//  - it escaped more then '=' and '&'
 
-func ParseProfile(input string) Profile {
-	r := make(map[string]string)
-
-	q, _ := url.ParseQuery(input)
-
-	for k,v := range q {
-		r[k] = v[0]
-	}
-
-	return r
+type Profile struct {
+	email string
+	uid int
+	role string
 }
 
-func (p Profile) String() string {
-	u := url.Values{}
-	for k, v := range p {
-		u.Add(k, v)
+func ParseProfile(encoded string) Profile {
+	pairs := strings.Split(encoded, "&")
+	profile := Profile{}
+
+	for _, p := range pairs {
+		parts := strings.Split(p, "=")
+		switch parts[0] {
+		case "email":
+			profile.email = parts[1]
+		case "uid":
+			profile.uid, _ = strconv.Atoi(parts[1])
+		case "role":
+			profile.role = parts[1]
+		default:
+		}
 	}
-	return u.Encode()
+
+	return profile
 }
 
 /*
@@ -395,13 +423,28 @@ Your "profile_for" function should NOT allow encoding metacharacters
 let people set their email address to "foo@bar.com&role=admin".
 */
 
-func ProfileFor(email string) Profile {
-	p := Profile{}
-	p["email"] = email
-	p["uid"] = "10"
-	p["role"] = "user"
+func valueEscape(s string) string {
+	return strings.Replace(strings.Replace(s, "=", "", -1), "&", "", -1)
+}
 
-	return p
+func (p Profile) Encode() string {
+	var buf bytes.Buffer
+	buf.WriteString("email=")
+	buf.WriteString(valueEscape(p.email))
+	buf.WriteString("&uid=")
+	buf.WriteString(strconv.Itoa(p.uid))
+	buf.WriteString("&role=")
+	buf.WriteString(valueEscape(p.role))
+
+	return buf.String()
+}
+
+func ProfileFor(email string) Profile {
+	return Profile {
+		email: email,
+		uid: 10,
+		role: "user",
+	}
 }
 
 /*
@@ -411,30 +454,37 @@ Now, two more easy functions. Generate a random AES key, then:
  to the "attacker".
 
  (b) Decrypt the encoded user profile and parse it.
-
-Using only the user input to profile_for() (as an oracle to generate
-"valid" ciphertexts) and the ciphertexts themselves, make a role=admin
-profile.
-
-
 */
 
 type profileEncode func(string)[]byte
-type profleDecode func([]byte)Profile
+type profileDecode func([]byte)Profile
 
-func CreateProfileOracle() (profileEncode, profleDecode) {
-	key := RandomAESKey()
+func CreateProfileOracle(key []byte) (profileEncode, profileDecode) {
+	if key == nil {
+		key = RandomAESKey()
+	}
 
 	pe := func(email string) []byte {
 		p := ProfileFor(email)
-		return AesECBEncrypt(key, []byte(p.String())) 
+		return AesECBEncrypt(key, []byte(p.Encode()))
 	}
 
-
 	pd := func(data []byte) Profile {
-		s := package1.DecryptAes(key, data)
+		s := AesECBDecrypt(key, data)
 		return ParseProfile(string(s))
 	}
 
 	return pe, pd
+}
+
+/*
+Using only the user input to profile_for() (as an oracle to generate
+"valid" ciphertexts) and the ciphertexts themselves, make a role=admin
+profile.
+*/
+
+func CrackProfile(pe profileEncode, role string) []byte {
+	role = "1234567890" + string(Pkcs7_pad(16, []byte(role)))
+
+	return append(pe("ops@cisco.com")[0:32], pe(role)[16:32]...)
 }

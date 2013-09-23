@@ -4,3 +4,5 @@ matsano p2 randomEncrypt file:package1\gistfile4.txt | matsano p2 blockMode
 matsano p2 randomEncrypt file:package1\gistfile4.txt | matsano p2 blockMode
 matsano p2 randomEncrypt file:package1\gistfile4.txt | matsano p2 blockMode
 matsano p2 crackAesEcb "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
+matsano p2 randomKey > key.txt
+matsano p2 profileCrack file:key.txt admin | matsano p2 profileDecrypt file:key.txt

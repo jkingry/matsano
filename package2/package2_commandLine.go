@@ -132,7 +132,41 @@ func init() {
 	profileFor.Command = func(args []string) {
 		encoding.SetDefault(encoding.Ascii, encoding.Ascii, encoding.Ascii)
 
-		fmt.Print(ProfileFor(cmd.GetInput(args,0)))
-	
+		fmt.Print(ProfileFor(cmd.GetInput(args,0)).Encode())
+	}
+
+	profileEncrypt := Commands.Add("profileEncrypt", "[key] {email]")
+	profileEncrypt.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Base64, encoding.Base64)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+
+		pe, _ := CreateProfileOracle(key)
+
+		fmt.Print(encoding.Out.Encode(pe(cmd.GetInput(args, 1))))
+	}
+
+	profileDecrypt := Commands.Add("profileDecrypt", "[key] {data]")
+	profileDecrypt.Command = func(args []string) {
+		encoding.SetDefault(encoding.Base64, encoding.Base64, encoding.Ascii)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+
+		_, pd := CreateProfileOracle(key)
+
+		fmt.Printf("%#v", pd(input))
+	}
+
+	profileCrack := Commands.Add("profileCrack", "[key] [role]")
+	profileCrack.Command = func(args []string) {
+		encoding.SetDefault(encoding.Ascii, encoding.Base64, encoding.Base64)
+
+		key := encoding.Key.Decode(cmd.GetInput(args, 0))
+		input := encoding.In.Decode(cmd.GetInput(args, 1))
+
+		pe, _ := CreateProfileOracle(key)
+
+		fmt.Print(encoding.Out.Encode(CrackProfile(pe, string(input))))
 	}
 }
